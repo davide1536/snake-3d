@@ -87,7 +87,7 @@ void display(void){
             head.vertici.vertx1[0]=-4.5;
             head.vertici.vertx2[0]=-4.5;
             head.vertici.vertx3[0]=-5.0;
-            head.vertici.vertx4[0]=-5.0;   
+            head.vertici.vertx4[0]=-5.0;
             currPos[0]= 0.0; currPos[1]= 0.0; 
         }
     }
@@ -159,6 +159,7 @@ void display(void){
     }
 
     glFinish();
+    glutSwapBuffers();
 }
 
 void init(){
@@ -184,7 +185,7 @@ int main(int argc, char** argv){
     
 
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB );
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB );
     
     head.vertici.vertx1[0]=0.5; head.vertici.vertx1[1]=0.0;
     head.vertici.vertx2[0]=0.5; head.vertici.vertx2[1]=-0.5;
@@ -197,7 +198,8 @@ int main(int argc, char** argv){
     head.next=(CorpoSerpe *)malloc(sizeof(CorpoSerpe));
     head.next->next=(CorpoSerpe *)malloc(sizeof(CorpoSerpe));
     head.next->next->next=(CorpoSerpe *)malloc(sizeof(CorpoSerpe));
-
+    head.next->next->next->next=NULL;
+    
     glutInitWindowSize(800, 800);
     glutInitWindowPosition(400, 400);
     glutCreateWindow ("OpenGL Window");
