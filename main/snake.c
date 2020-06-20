@@ -47,6 +47,22 @@ Cube initialBlocks[INITIAL_BLOCK_NO] = {
 			{-1.5, 0.0},
 			{-1.5, -0.5}
 		}
+	},
+	{
+		.vertex = {
+			{-1.5, 0.0},
+			{-1.5, -0.5},
+			{-2.0, 0.0},
+			{-2.0, -0.5}
+		}
+	},
+	{
+		.vertex = {
+			{-2.0, 0.0},
+			{-2.0, -0.5},
+			{-2.5, 0.0},
+			{-2.5, -0.5}
+		}
 	}
 };
 
@@ -224,6 +240,12 @@ void processInput() {
 	// Svuoto il buffer per non accumulare le posizioni durante i refresh
 	for(int i = 0; i < 2; i++)
 		currPos[i] = 0.0;
+	for( Snake *morte=head->next;morte!=NULL;morte= morte->next){
+		if(head->block.vertex[0][0] == morte->block.vertex[0][0] && head->block.vertex[0][1] == morte->block.vertex[0][1]){
+			printf("SEI MORTO BRUTTO COGLIONE!!");
+			exit(-1);
+		}
+	}
 	
 	if( frutto.vertex[0][0] == head->block.vertex[0][0] && frutto.vertex[0][1] == head->block.vertex[0][1]){
 		frutto.trigger=1;
@@ -240,6 +262,7 @@ void processInput() {
 			lastBlock->next = aux;
 		lastBlock = aux;
 	}
+
 
 }
 
@@ -277,7 +300,7 @@ void drawSnake() {
 void appendBlock(int index) {
 	// Allocazione nuovo elemento
 	Snake *aux = malloc(sizeof(Snake));
-	
+	aux->block.trigger=0;
 	// Copia dei dati
 	aux->block = initialBlocks[index];
 	
