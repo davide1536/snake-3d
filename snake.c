@@ -31,6 +31,14 @@ Cube initialBlocks[INITIAL_BLOCK_NO] = {
 			{0.0, -0.5},
 			{0.0, -1.0}
 		}
+	},
+	{
+		.vertex = {
+			{0.5, -1.0},
+			{0.5, -1.5},
+			{0.0, -1.0},
+			{0.0, -1.5}
+		}
 	}
 };
 
@@ -39,7 +47,8 @@ Snake 	*head,			// Testa del serpente (primo elemento)
 		*lastBlock;		// Ultimo blocco inserito
 
 // Elemento ausiliario "fantasma" per salvare la posizione di un blocco prima dello spostamento.
-Cube 	ghost;
+Cube 	ghost,
+		ausilio;
 
 // Input.
 static Input userDirection,		// Direzione inserita dall'utente
@@ -177,17 +186,16 @@ void drawSnake() {
 		glBegin(GL_TRIANGLE_STRIP);
 			if(ptr == head) {
 				glColor3f(0.0, 0.0, 1.0);
-				// Specifico i vertici da disegnare nella scena
-				for(int i = 0; i < VERTEX_NO; i++)
-					glVertex2f(ptr->block.vertex[i][0], ptr->block.vertex[i][1]);
 			} else {
 				glColor3f(0.0, 1.0, 0.0);
-				// Scrivo i vertici della variabile "fantasma"
-				for(int i = 0; i < VERTEX_NO; i++)
-					glVertex2f(ghost.vertex[i][0], ghost.vertex[i][1]);
-				// Preparo ghost per la prossima transizione tra blocchi da disegnare
-				ghost = ptr->block;
+				// Effettuo lo scambio di variabili
+				ausilio 	= ptr->block;
+				ptr->block 	= ghost;
+				ghost 		= ausilio;
 			}
+			// Specifico i vertici da disegnare nella scena
+			for(int i = 0; i < VERTEX_NO; i++)
+				glVertex2f(ptr->block.vertex[i][0], ptr->block.vertex[i][1]);
 		glEnd();
 		glPopMatrix();
 	}
@@ -208,7 +216,6 @@ void appendBlock(int index) {
 		lastBlock->next = aux;
 	lastBlock = aux;
 }
-
 
 // Funzione helper per evitare warning su glutTimerFunc
 void helper(int val) {
@@ -255,7 +262,7 @@ void display() {
 	#endif
 
 	// Animazione del serpente
-	glutTimerFunc(100, helper, 0);
+	glutTimerFunc(5000/60, helper, 0);
 }
 
 void init() {
