@@ -10,7 +10,7 @@
  */
 struct _cube_t {
     GLfloat vertex[VERTEX_NO][2];   // Vertici (x,y)
-    //char trigger;           // Trigger in caso di collisione con altri cubi
+    short int trigger;           // Trigger in caso di collisione con altri cubi
                             // (sizeof(char) == 1)
 };
 typedef struct _cube_t Cube;

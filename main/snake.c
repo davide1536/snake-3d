@@ -58,6 +58,8 @@ Snake 	*head,			// Testa del serpente (primo elemento)
 Cube 	ghost,
 		ausilio;
 
+Cube frutto;
+
 // Input.
 static Input userDirection;	// Direzione inserita dall'utente
 
@@ -78,7 +80,12 @@ void exitHandler(unsigned char key, int x, int y) {
 void spawnCubo(void){
     float randomX,randomY;
     float vertx[2];
-    randomX= (float)rand()/RAND_MAX;
+	frutto.vertex[0][0]=4.0;		frutto.vertex[0][1]=4.0;
+	frutto.vertex[1][0]=4.0-0.5;	frutto.vertex[1][1]=4.0;
+	frutto.vertex[2][0]=4.0;		frutto.vertex[2][1]=4.0-0.5;
+	frutto.vertex[3][0]=4.0-0.5; 	frutto.vertex[3][1]=4.0-0.5;
+
+    /*randomX= (float)rand()/RAND_MAX;
     randomY= (float)rand()/RAND_MAX;
     
     if(randomX>=0.00 && randomX<=0.09) vertx[0]=-4.0;
@@ -106,14 +113,14 @@ void spawnCubo(void){
     if(randomY>=0.70 && randomY<=0.79) vertx[1]=3.0;
     if(randomY>=0.80 && randomY<=0.89) vertx[1]=4.0;
     if(randomY>=0.90 && randomY<=0.99) vertx[1]=5.0;
+	*/
 
     glPushMatrix();
         glBegin(GL_TRIANGLE_STRIP);
             glColor3f(1.0,0.0,0.0);
-            glVertex2f(vertx[0],vertx[1]);
-            glVertex2f(vertx[0]-0.5,vertx[1]);
-            glVertex2f(vertx[0],vertx[1]-0.5);
-            glVertex2f(vertx[0]-0.5,vertx[1]-0.5);
+            for(int i = 0; i < VERTEX_NO; i++)
+				glVertex2f(frutto.vertex[i][0], frutto.vertex[i][1]);
+
         glEnd();
     glPopMatrix();
 }
@@ -217,6 +224,23 @@ void processInput() {
 	// Svuoto il buffer per non accumulare le posizioni durante i refresh
 	for(int i = 0; i < 2; i++)
 		currPos[i] = 0.0;
+	
+	if( frutto.vertex[0][0] == head->block.vertex[0][0] && frutto.vertex[0][1] == head->block.vertex[0][1]){
+		frutto.trigger=1;
+		Snake *aux = malloc(sizeof(Snake));
+	
+		// Copia dei dati
+		aux->block = frutto;
+		
+		// Imposto il nuovo elemento come ultimo
+		aux->next = NULL;
+
+		// Se la lista è vuota, imposto questo elemento come primo
+		if(lastBlock != NULL)
+			lastBlock->next = aux;
+		lastBlock = aux;
+	}
+
 }
 
 void killSnake() {
@@ -297,7 +321,8 @@ void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	processInput();
-	spawnCubo();
+	if(frutto.trigger!=1)
+		spawnCubo();
 
 	// Disegno il serpente
 	drawSnake();
@@ -343,6 +368,8 @@ void init() {
 int main(int argc, char** argv) {
 	GLenum glewErr;
 	
+	frutto.trigger=0;
+
 	glutInit(&argc, argv);
 
 	#ifdef DOUBLE_BUFFER
