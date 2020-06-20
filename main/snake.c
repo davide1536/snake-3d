@@ -8,8 +8,8 @@
 #include <GL/freeglut.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "structures.h"	// Strutture dati personalizzate necessarie
-#include "snake.h"		// Procedure per il serpente
+#include "lib/structures.h"	// Strutture dati personalizzate necessarie
+#include "lib/snake.h"		// Procedure per il serpente
 
 // Abilita il double buffering
 #define DOUBLE_BUFFER
