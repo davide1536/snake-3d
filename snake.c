@@ -211,7 +211,7 @@ void appendBlock(int index) {
 
 
 // Funzione helper per evitare warning su glutTimerFunc
-int helper(int val) {
+void helper(int val) {
 	glutPostRedisplay();
 }
 
