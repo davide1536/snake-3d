@@ -75,6 +75,49 @@ void exitHandler(unsigned char key, int x, int y) {
 			break;
 	}
 }
+void spawnCubo(void){
+    float randomX,randomY;
+    float vertx[2];
+    randomX= (float)rand()/RAND_MAX;
+    randomY= (float)rand()/RAND_MAX;
+    
+    if(randomX>=0.00 && randomX<=0.09) vertx[0]=-4.0;
+    if(randomX>=0.10 && randomX<=0.19) vertx[0]=-3.0;
+    if(randomX>=0.20 && randomX<=0.29) vertx[0]=-2.0;
+    if(randomX>=0.30 && randomX<=0.39) vertx[0]=-1.0;
+    if(randomX>=0.40 && randomX<=0.49) vertx[0]=0.0;
+
+    if(randomX>=0.50 && randomX<=0.59) vertx[0]=1.0;
+    if(randomX>=0.60 && randomX<=0.69) vertx[0]=2.0;
+    if(randomX>=0.70 && randomX<=0.79) vertx[0]=3.0;
+    if(randomX>=0.80 && randomX<=0.89) vertx[0]=4.0;
+    if(randomX>=0.90 && randomX<=0.99) vertx[0]=5.0;
+
+
+
+    if(randomY>=0.00 && randomY<=0.09) vertx[1]=-4.0;
+    if(randomY>=0.10 && randomY<=0.19) vertx[1]=-3.0;
+    if(randomY>=0.20 && randomY<=0.29) vertx[1]=-2.0;
+    if(randomY>=0.30 && randomY<=0.39) vertx[1]=-1.0;
+    if(randomY>=0.40 && randomY<=0.49) vertx[1]=0.0;
+
+    if(randomY>=0.50 && randomY<=0.59) vertx[1]=1.0;
+    if(randomY>=0.60 && randomY<=0.69) vertx[1]=2.0;
+    if(randomY>=0.70 && randomY<=0.79) vertx[1]=3.0;
+    if(randomY>=0.80 && randomY<=0.89) vertx[1]=4.0;
+    if(randomY>=0.90 && randomY<=0.99) vertx[1]=5.0;
+
+    glPushMatrix();
+        glBegin(GL_TRIANGLE_STRIP);
+            glColor3f(1.0,0.0,0.0);
+            glVertex2f(vertx[0],vertx[1]);
+            glVertex2f(vertx[0]-0.5,vertx[1]);
+            glVertex2f(vertx[0],vertx[1]-0.5);
+            glVertex2f(vertx[0]-0.5,vertx[1]-0.5);
+        glEnd();
+    glPopMatrix();
+}
+
 
 // Input da tastiera.
 void keyInput(int key, int x, int y){
@@ -254,6 +297,7 @@ void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	processInput();
+	spawnCubo();
 
 	// Disegno il serpente
 	drawSnake();
