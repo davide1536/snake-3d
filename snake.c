@@ -57,13 +57,21 @@ static Input userDirection,		// Direzione inserita dall'utente
 // Movimento del serpente.
 static GLfloat currPos[2] = {0.0, 0.0};
 
+// Gestione tasti per uscita.
+void exitHandler(unsigned char key, int x, int y) {
+	switch(key) {
+		case 27:
+		case 'q':
+			killSnake();
+			exit(0);
+		default:
+			break;
+	}
+}
+
 // Input da tastiera.
 void keyInput(int key, int x, int y){
 	switch(key) {
-		case 27:
-			// ESC
-			killSnake();
-			exit(0);
 		case GLUT_KEY_UP:
 			fprintf(stderr, "up\n");
 			if(currentDirection == down) 
@@ -99,7 +107,8 @@ void keyInput(int key, int x, int y){
 			break;
 	}
 	// Lo snake e' sempre in movimento, dunque viene sempre aggiornata la sua posizione
-	processInput();
+	//processInput();
+	glutPostRedisplay();
 }
 
 // Gestisce l'input inserito dall'utente.
@@ -314,6 +323,7 @@ int main(int argc, char** argv) {
 	}
 	
 	glutSpecialFunc(keyInput);
+	glutKeyboardFunc(exitHandler);
 	
 	init();
 	glutDisplayFunc(display);
