@@ -26,18 +26,26 @@ Cube initialBlocks[INITIAL_BLOCK_NO] = {
 	},
 	{	
 		.vertex = {	
-			{0.5, -0.5},
-			{0.5, -1.0},
+			{0.0, 0.0},
 			{0.0, -0.5},
-			{0.0, -1.0}
+			{-0.5, 0.0},
+			{-0.5, -0.5}
 		}
 	},
 	{
 		.vertex = {
-			{0.5, -1.0},
-			{0.5, -1.5},
-			{0.0, -1.0},
-			{0.0, -1.5}
+			{-0.5, 0.0},
+			{-0.5, -0.5},
+			{-1.0, 0.0},
+			{-1.0, -0.5}
+		}
+	},
+	{
+		.vertex = {
+			{-1.0, 0.0},
+			{-1.0, -0.5},
+			{-1.5, 0.0},
+			{-1.5, -0.5}
 		}
 	}
 };
@@ -51,8 +59,7 @@ Cube 	ghost,
 		ausilio;
 
 // Input.
-static Input userDirection,		// Direzione inserita dall'utente
-	  		 currentDirection;	// Direzione corrente
+static Input userDirection;	// Direzione inserita dall'utente
 
 // Movimento del serpente.
 static GLfloat currPos[2] = {0.0, 0.0};
@@ -74,41 +81,31 @@ void keyInput(int key, int x, int y){
 	switch(key) {
 		case GLUT_KEY_UP:
 			fprintf(stderr, "up\n");
-			if(currentDirection == down) 
+			if(userDirection == down) 
 				break;
 			userDirection 		= up;
-			currentDirection 	= up;
 			break;
 		case GLUT_KEY_DOWN:
-					fprintf(stderr, "down\n");
-
-			if(currentDirection == up) 
+			fprintf(stderr, "down\n");
+			if(userDirection == up) 
 				break;
-			userDirection 		= down;
-			currentDirection 	= down;
+			userDirection = down;
 			break;
 		case GLUT_KEY_RIGHT:
 					fprintf(stderr, "right\n");
-
-			if(currentDirection == left) 
+			if(userDirection == left) 
 				break;
 			userDirection 		= right;
-			currentDirection 	= right;
 			break;
 		case GLUT_KEY_LEFT:
 					fprintf(stderr, "left\n");
-
-			if(currentDirection == right) 
+			if(userDirection == right) 
 				break;
-			userDirection 		= left;
-			currentDirection 	= left;
+			userDirection = left;
 			break;
 		default:
 			break;
 	}
-	// Lo snake e' sempre in movimento, dunque viene sempre aggiornata la sua posizione
-	//processInput();
-	glutPostRedisplay();
 }
 
 // Gestisce l'input inserito dall'utente.
@@ -191,17 +188,17 @@ void killSnake() {
 
 void drawSnake() {
 	for(Snake *ptr = head; ptr != NULL; ptr = ptr->next) {
+		if(ptr == head) {
+			glColor3f(0.0, 0.0, 1.0);
+		} else {
+			glColor3f(0.0, 1.0, 0.0);
+			// Effettuo lo scambio di variabili
+			ausilio 	= ptr->block;
+			ptr->block 	= ghost;
+			ghost 		= ausilio;
+		}
 		glPushMatrix();
 		glBegin(GL_TRIANGLE_STRIP);
-			if(ptr == head) {
-				glColor3f(0.0, 0.0, 1.0);
-			} else {
-				glColor3f(0.0, 1.0, 0.0);
-				// Effettuo lo scambio di variabili
-				ausilio 	= ptr->block;
-				ptr->block 	= ghost;
-				ghost 		= ausilio;
-			}
 			// Specifico i vertici da disegnare nella scena
 			for(int i = 0; i < VERTEX_NO; i++)
 				glVertex2f(ptr->block.vertex[i][0], ptr->block.vertex[i][1]);
@@ -250,7 +247,6 @@ void snakeInit() {
 	}
 	
 	// Inizializzazione direzione iniziale
-	currentDirection = right;
 	userDirection 	 = right;
 }
 
@@ -271,7 +267,7 @@ void display() {
 	#endif
 
 	// Animazione del serpente
-	glutTimerFunc(5000/60, helper, 0);
+	glutTimerFunc(10000/60, helper, 0);
 }
 
 void init() {

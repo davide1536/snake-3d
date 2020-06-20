@@ -1,7 +1,7 @@
 // Numero di vertici.
 #define VERTEX_NO   4
 // Numero di blocchi iniziali.
-#define INITIAL_BLOCK_NO    3
+#define INITIAL_BLOCK_NO    4
 // Velocità di movimento. (???)
 #define MOV (1.0/2.0)
 
