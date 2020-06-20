@@ -209,6 +209,12 @@ void appendBlock(int index) {
 	lastBlock = aux;
 }
 
+
+// Funzione helper per evitare warning su glutTimerFunc
+int helper(int val) {
+	glutPostRedisplay();
+}
+
 // Inizializzazione della lista collegata del serpente.
 void snakeInit() {
 	// Inizializzazione lista vuota
@@ -249,7 +255,7 @@ void display() {
 	#endif
 
 	// Animazione del serpente
-	glutTimerFunc(100, glutPostRedisplay, 0);
+	glutTimerFunc(100, helper, 0);
 }
 
 void init() {
