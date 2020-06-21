@@ -4,6 +4,7 @@
  * - VBO
  * - Griglia
  */
+#include <time.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <stdio.h>
@@ -15,6 +16,7 @@
 #define DOUBLE_BUFFER
 int snakeCoordxAus = 0,snakeCoordyAus = 0; //coords for virtual matrix (snake)
 int snakeCoordxGhost = 0, snakeCoordyGhost = 0; //coords for virtual matrix (fruits)
+int numberFruits = 0;
 float x = 0, y = 0; //parameter used in translate
 
 // Coordinate iniziali per i vertici dei cubi. (primo blocco, testa)
@@ -56,18 +58,22 @@ Cube 	ghost,
 		ausilio;
 Cube snakeCube = {
 	.vertex = {
-        {0.5, 0.0},
-        {0.5, -0.5},
-        {0.0, 0.0},
-        {0.0, -0.5}
+        {0.25, 0.25},
+        {0.25, -0.25},
+        {-0.25, 0.25},
+        {-0.25, -0.25}
     }
 };
 Cube frutto = {
     .vertex = {
-        {0.5, 0.0},
-        {0.5, -0.5},
-        {0.0, 0.0},
-        {0.0, -0.5}
+        // {0.5, 0.0},
+        // {0.5, -0.5},
+        // {0.0, 0.0},
+        // {0.0, -0.5}
+		 {0.25, 0.25},
+        {0.25, -0.25},
+        {-0.25, 0.25},
+        {-0.25, -0.25}
     }
 };
 
@@ -125,8 +131,13 @@ void spawnCubo(void){
     if(randomY>=0.80 && randomY<=0.89) vertx[1]=4.0;
     if(randomY>=0.90 && randomY<=0.99) vertx[1]=5.0;
 	*/
-    frutto.coordx = 5;
-    frutto.coordy = 0;
+	if (!numberFruits) {
+    	frutto.coordx = -10+rand()%20;
+    	frutto.coordy = -10+rand()%20;
+		printf ("frutto: %d,%d\n",frutto.coordx,frutto.coordy);
+		numberFruits ++; 
+	}
+	
     glPushMatrix();
     glTranslatef (frutto.coordx*CELL,frutto.coordy*CELL,0);
         glBegin(GL_TRIANGLE_STRIP);
@@ -137,7 +148,33 @@ void spawnCubo(void){
         glEnd();
     glPopMatrix();
 }
+void checkFruit() {
+	if (head->block.coordx == frutto.coordx && head->block.coordy == frutto.coordy) { //se la testa si trova nella stessa coordinata x e y mangia il frutto
+		frutto.trigger=1;
+		Snake *aux = malloc(sizeof(Snake));
+	
+		// Copia dei dati
+		aux->block = snakeCube;
+		
+		// Imposto il nuovo elemento come ultimo
+		aux->next = NULL;
 
+		// Se la lista è vuota, imposto questo elemento come primo
+		if(lastBlock != NULL)
+			lastBlock->next = aux;
+		lastBlock = aux;
+
+		numberFruits --;
+	}
+};
+
+void checkDeath() {
+	for(Snake *ptr = head->next; ptr != NULL; ptr = ptr->next) {
+		if (head->block.coordx == ptr->block.coordx && head->block.coordy == ptr->block.coordy ) { //controllo se sono sulla stessa coordinata di un mio stesso cubo
+			exit(-1);
+		}
+	}
+};
 
 // Input da tastiera.
 void keyInput(int key, int x, int y){
@@ -226,7 +263,6 @@ void processInput() {
 	// Salvo la posizione della testa
 	//ghost = head->block;
 
-
 	// Scrivo le modifiche nella testa del serpente
 	// for(int i = 0; i < VERTEX_NO; i++) {
 	// 	for(int j = 0; j < 2; j++)
@@ -278,7 +314,7 @@ void drawSnake() {
 			glColor3f(0.0, 0.0, 1.0);
 			ptr->block.coordx; 
 			ptr->block.coordy;
-			printf ("testa: %d,%d\n",ptr->block.coordx,ptr->block.coordy);
+			// printf ("testa: %d,%d\n",ptr->block.coordx,ptr->block.coordy);
 			// snakeCoordyGhost = head->block.coordy;
 			// snakeCoordxGhost = head->block.coordx;
 		} 
@@ -298,7 +334,7 @@ void drawSnake() {
 			snakeCoordyAus = ptr->block.coordy;
 			ptr->block.coordy = snakeCoordyGhost;
 			snakeCoordyGhost = snakeCoordyAus;
-			printf ("corpo: %d,%d\n",ptr->block.coordx,ptr->block.coordy);
+			// printf ("corpo: %d,%d\n",ptr->block.coordx,ptr->block.coordy);
 
 		}
 		glPushMatrix();
@@ -362,12 +398,15 @@ void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	processInput();
-	if(frutto.trigger!=1)
-		spawnCubo();
+
+	spawnCubo();
+
 
 	//Disegno il serpente
 	drawSnake();
+	checkFruit();
 	
+	checkDeath();
 	// movate
 	glFlush();
 	glFinish();

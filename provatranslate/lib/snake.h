@@ -8,3 +8,7 @@ void killSnake();
 void processInput();
 // Disegno del serpente sulla scena.
 void drawSnake();
+//Controllo se ho mangiato il frutto
+void checkFruit();
+//Controllo se mi sono scontrato con me stesso 
+void checkDeath();
