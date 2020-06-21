@@ -23,16 +23,20 @@ OpenGL:
     -   pausa
 -   Keyboard events
 
-# Piano di progetto
+## TODO
 
-1.  Scena
-    -   mappa (griglia)
-        -   effetto "pacman"
-        -   frustum
-        -   VBO
-2.  Snake
-    -   cubi, collisione
-3.  Integrazione
+### Obbligatorie
+
+-   VBO
+-   3D
+-   Lighting/Shading
+-   Griglia
+-   Scritta con punteggio
+
+### Opzionali
+
+-   Menu
+-   `gluLookAt()`
 
 # Appunti
 
