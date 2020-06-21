@@ -1,170 +1,465 @@
-/* TODO:
- * - Input lag dovuto a redisplay (tra glutTimerFunc e keyInput)
- * - 3D
- * - VBO
- * - Griglia
- */
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "lib/structures.h"	// Strutture dati personalizzate necessarie
 #include "lib/snake.h"		// Procedure per il serpente
 
-// Abilita il double buffering
-#define DOUBLE_BUFFER
+//#define VAO
 
-// Coordinate iniziali per i vertici dei cubi. (primo blocco, testa)
-Cube initialBlocks[INITIAL_BLOCK_NO] = { 
-	{	
-		.vertex = {	
-			{0.5, 0.0},
-			{0.5, -0.5},
-			{0.0, 0.0},
-			{0.0, -0.5}
-		}
-	},
-	{	
-		.vertex = {	
-			{0.0, 0.0},
-			{0.0, -0.5},
-			{-0.5, 0.0},
-			{-0.5, -0.5}
-		}
-	},
-	{
-		.vertex = {
-			{-0.5, 0.0},
-			{-0.5, -0.5},
-			{-1.0, 0.0},
-			{-1.0, -0.5}
-		}
-	},
-	{
-		.vertex = {
-			{-1.0, 0.0},
-			{-1.0, -0.5},
-			{-1.5, 0.0},
-			{-1.5, -0.5}
-		}
-	},
-	{
-		.vertex = {
-			{-1.5, 0.0},
-			{-1.5, -0.5},
-			{-2.0, 0.0},
-			{-2.0, -0.5}
-		}
-	},
-	{
-		.vertex = {
-			{-2.0, 0.0},
-			{-2.0, -0.5},
-			{-2.5, 0.0},
-			{-2.5, -0.5}
-		}
-	}
+// Coordinate ausiliarie per la griglia virtuale (serpente).
+int snakeAuxCoords[2] = {0, 0};
+// Coordinate ausiliarie per la griglia virtuale (serpente fantasma).
+int ghostAuxCoords[2] = {0, 0};
+
+// Coordinate di spostamento della testa del serpente.
+float xMov = 0, 
+	  yMov = 0;
+
+// Coordinate iniziali nella griglia per i cubi.
+int initialBlocks[INITIAL_BLOCK_NO][2] = { 
+	{0, 0},
+	{0, -1},
+	{0, -2},
+	{0, -3},
+	{0, -4},
+	{0, -5}
+};
+
+// Vertici dei cubi del serpente della scena.
+const GLfloat cubeVertexArray[VERTEX_NO][2] = {
+	{0.5, 0.0},
+	{0.5, -0.5},
+	{0.0, 0.0},
+	{0.0, -0.5}
+};
+
+// Vertici dei frutti della scena.
+const GLfloat fruitVertexArray[VERTEX_NO][2] = {
+	{0.5, 0.0},
+	{0.5, -0.5},
+	{0.0, 0.0},
+	{0.0, -0.5}
+};
+
+// Colori del serpente della scena.
+const GLfloat cubeColorArray[2][3] = {
+	{0.0, 0.0, 1.0},	// Testa
+	{0.0, 1.0, 0.0}		// Corpo
+};
+
+// Colori dei frutti della scena.
+const GLfloat fruitColorArray[3] = {
+	1.0, 0.0, 0.0
 };
 
 // Lista collegata rappresentante il serpente.
 Snake 	*head,			// Testa del serpente (primo elemento)
 		*lastBlock;		// Ultimo blocco inserito
 
-// Elemento ausiliario "fantasma" per salvare la posizione di un blocco prima dello spostamento.
-Cube 	ghost,
-		ausilio;
+// Frutto della scena.
+Cube 	fruit;
 
-Cube frutto;
+// Direzione inserita dall'utente.
+static Input userDirection;
 
-// Input.
-static Input userDirection;	// Direzione inserita dall'utente
+// VBO/VAO stuff
+unsigned int vao[2];
 
-// Movimento del serpente.
-static GLfloat currPos[2] = {0.0, 0.0};
+unsigned int cubeBuffers[2];
+unsigned int fruitBuffers[2];
+GLint cubeVertexIndices[VERTEX_NO];
+GLint fruitVertexIndices[VERTEX_NO];
 
-// Gestione tasti per uscita.
-void exitHandler(unsigned char key, int x, int y) {
-	switch(key) {
-		case 27:
-		case 'q':
-			killSnake();
-			exit(0);
+
+int main(int argc, char** argv) {
+	GLenum glewErr;
+	
+	glutInit(&argc, argv);
+
+	// Double buffering
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+
+	// Definizione proprieta' finestra principale
+	glutInitWindowSize(1024, 768);
+	glutInitWindowPosition(800, 800);
+	glutCreateWindow("Snake 3D");
+
+	// Inizializzazione glew
+	glewErr = glewInit();
+	if (glewErr != GLEW_OK) {
+		fprintf(stderr, "GLEW init failed: %s\n", glewGetErrorString(glewErr));
+		exit(1);
+	}
+	
+	// Gestione input da tastiera:
+	glutSpecialFunc(keyInput);		// tasti speciali (GLUT_KEY_*) per movimento
+	glutKeyboardFunc(exitHandler);	// tasti (ESC...) per uscita
+	
+	init();
+	glutDisplayFunc(display);
+	glutMainLoop();
+
+	return 0;
+}
+
+// Inizializzazione principale del programma.
+void init() {
+	GLenum glErr;
+
+	// Inizializzazione serpente
+	snakeInit();
+
+	// Seed per coordinate frutto
+	srand(time(0));
+
+	// Sfondo
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	
+	// Depth buffer
+	glEnable(GL_DEPTH_TEST);
+
+	#ifdef VAO
+		initVao();
+	#endif
+
+	// Proiezione ortogonale
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-5.0,5.0,-5.0,5.0,-2.0,2.0);
+
+	// Controllo errori
+    if ((glErr=glGetError()) != 0) {
+        fprintf(stderr, "Errore = %d\n", glErr);
+        //exit(-1);
+    }
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+}
+
+// Inizializzazione della lista collegata del serpente.
+void snakeInit() {
+	// Inizializzazione lista vuota
+	head 		= NULL;
+	lastBlock 	= NULL;
+
+	// Inserimento di un blocco in coda
+	for(int i  = 0; i < INITIAL_BLOCK_NO; i++) {
+		appendBlock(initialBlocks[i]);
+		
+		// Salvo la posizione della testa
+		if(i == 0)
+			head = lastBlock;
+	}
+	
+	// Inizializzazione direzione iniziale
+	userDirection = right;
+}
+
+// Aggiunta di un blocco al corpo del serpente.
+void appendBlock(int *newCoordinates) {
+	// Allocazione nuovo elemento
+	Snake *aux = malloc(sizeof(Snake));
+	
+	// Copia dei dati
+	aux->block.coords[0] = newCoordinates[0];
+	aux->block.coords[1] = newCoordinates[1]; 
+
+	// Inizializzazione del trigger per collisione
+	aux->block.trigger = 0;
+	
+	// Imposto il nuovo elemento come ultimo
+	aux->next = NULL;
+
+	// Se la lista è vuota, imposto questo elemento come primo
+	if(lastBlock != NULL)
+		lastBlock->next = aux;
+	lastBlock = aux;  
+}
+
+// VAO.
+void initVao() {
+	// VBO: abilitazione buffer per vertici e colori
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	// Generazione di due buffer ID
+	glGenBuffers(2, vao);
+
+	/**** vao[0]: cubi ****/
+	glBindVertexArray(vao[0]);
+
+	glGenBuffers(2, cubeBuffers);
+	// cubeBuffers[0]: vertici e colori
+	glBindBuffer(GL_ARRAY_BUFFER, cubeBuffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray) + sizeof(cubeColorArray), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertexArray), cubeVertexArray);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), sizeof(cubeColorArray), cubeColorArray);
+
+	// cubeBuffers[1]: indici
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeBuffers[1]);
+	for(int i = 0; i < VERTEX_NO; i++)
+		cubeVertexIndices[i] = i;
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
+
+	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(cubeVertexArray));
+
+	/**** vao[1]: frutti ****/
+	glBindVertexArray(vao[1]);
+	glGenBuffers(2, fruitBuffers);
+
+	// fruitBuffers[0]: vertici e colori
+	glBindBuffer(GL_ARRAY_BUFFER, fruitBuffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray)+sizeof(fruitColorArray), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(fruitVertexArray), fruitVertexArray);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), sizeof(fruitColorArray), fruitColorArray);
+
+	// fruitBuffers[1]: indici
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
+	for(int i = 0; i < VERTEX_NO; i++)
+		fruitVertexIndices[i] = i;
+	
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
+
+	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(fruitVertexArray));
+
+}
+
+// Funzione per glutDisplayFunc.
+void display() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	// Input (movimento)
+	processInput();
+	
+	// Se il frutto è stato mangiato, ne creo un altro
+	if(fruit.trigger)
+		newFruit();
+
+	// Serpente
+	drawSnakeHelper();
+
+	// Frutto
+	drawFruitHelper();
+	
+	// movate
+	glFlush();
+	glFinish();
+
+	// Double buffering
+	glutSwapBuffers();
+
+	// Animazione del serpente
+	glutTimerFunc(5000/60, redisplayHelper, 0);
+}
+
+// Modifica la scena in base all'input dell'utente.
+void processInput() {
+	// Avanza la testa del serpente
+	updateSnakeHead();
+
+	// Se i blocchi collidono, allora il serpente muore e il gioco finisce
+	if(isDying()) {
+		printf("Er pitonazzo è schiattato.\ngit gud\n");
+		killSnake();
+	}
+	
+	// Rilevamento collisione con il frutto: se la testa collide allora viene aggiunto un blocco
+	if(detectCollision(fruit.coords, head->block.coords)) {
+		fruit.trigger = 1;
+		appendBlock(fruit.coords);
+	}
+}
+
+// Aggiornamento della posizione della testa del serpente.
+void updateSnakeHead() {
+	/* Aggiornamento della posizione del serpente in base alle coordinate specificate
+	 * dall'utente; gestione "effetto pacman"
+	 */
+	switch(userDirection) {
+		case up:
+			if( head->block.coords[1] < 10) { 
+				yMov = 1;
+                xMov = 0;
+ 			} else {
+				yMov = -20;
+                xMov = 0;
+			}
+			break;
+		case down:    
+			if( head->block.coords[1] > -10) {
+				yMov = -1;
+                xMov = 0;				
+ 			} else {
+				yMov = 20;
+				xMov =  0;
+			}
+			break;
+		case left:
+ 			if( head->block.coords[0] > -10) {
+				xMov = -1;
+                yMov = 0;
+				
+ 			} else {
+				xMov = 20;
+				yMov = 0;
+			}
+			break;
+		case right:
+ 			if( head->block.coords[0] < 10) {
+				xMov = 1;
+                yMov = 0;
+ 			} else {
+				xMov = -20;
+                yMov = 0;
+			}
+			break;
 		default:
 			break;
 	}
-}
-void spawnCubo(void){
-    float randomX,randomY;
-    float vertx[2];
-	frutto.vertex[0][0]=4.0;		frutto.vertex[0][1]=4.0;
-	frutto.vertex[1][0]=4.0-0.5;	frutto.vertex[1][1]=4.0;
-	frutto.vertex[2][0]=4.0;		frutto.vertex[2][1]=4.0-0.5;
-	frutto.vertex[3][0]=4.0-0.5; 	frutto.vertex[3][1]=4.0-0.5;
 
-    /*randomX= (float)rand()/RAND_MAX;
-    randomY= (float)rand()/RAND_MAX;
-    
-    if(randomX>=0.00 && randomX<=0.09) vertx[0]=-4.0;
-    if(randomX>=0.10 && randomX<=0.19) vertx[0]=-3.0;
-    if(randomX>=0.20 && randomX<=0.29) vertx[0]=-2.0;
-    if(randomX>=0.30 && randomX<=0.39) vertx[0]=-1.0;
-    if(randomX>=0.40 && randomX<=0.49) vertx[0]=0.0;
-
-    if(randomX>=0.50 && randomX<=0.59) vertx[0]=1.0;
-    if(randomX>=0.60 && randomX<=0.69) vertx[0]=2.0;
-    if(randomX>=0.70 && randomX<=0.79) vertx[0]=3.0;
-    if(randomX>=0.80 && randomX<=0.89) vertx[0]=4.0;
-    if(randomX>=0.90 && randomX<=0.99) vertx[0]=5.0;
-
-
-
-    if(randomY>=0.00 && randomY<=0.09) vertx[1]=-4.0;
-    if(randomY>=0.10 && randomY<=0.19) vertx[1]=-3.0;
-    if(randomY>=0.20 && randomY<=0.29) vertx[1]=-2.0;
-    if(randomY>=0.30 && randomY<=0.39) vertx[1]=-1.0;
-    if(randomY>=0.40 && randomY<=0.49) vertx[1]=0.0;
-
-    if(randomY>=0.50 && randomY<=0.59) vertx[1]=1.0;
-    if(randomY>=0.60 && randomY<=0.69) vertx[1]=2.0;
-    if(randomY>=0.70 && randomY<=0.79) vertx[1]=3.0;
-    if(randomY>=0.80 && randomY<=0.89) vertx[1]=4.0;
-    if(randomY>=0.90 && randomY<=0.99) vertx[1]=5.0;
-	*/
-
-    glPushMatrix();
-        glBegin(GL_TRIANGLE_STRIP);
-            glColor3f(1.0,0.0,0.0);
-            for(int i = 0; i < VERTEX_NO; i++)
-				glVertex2f(frutto.vertex[i][0], frutto.vertex[i][1]);
-
-        glEnd();
-    glPopMatrix();
+	// Salvo la posizione originale della testa
+	for(int i = 0; i < 2; i++)
+		ghostAuxCoords[i] = head->block.coords[i];
+	
+	// Aggiorno la posizione della testa
+    head->block.coords[0] += xMov;
+    head->block.coords[1] += yMov;
 }
 
+// Rilevamento morte del serpente.
+int isDying() {
+	// Rilevamento collisione tra blocchi: se almeno due vertici sono in comune, i blocchi collidono e il serpente muore
+	for(Snake *death = head->next; death != NULL; death = death->next) {
+		if(detectCollision(head->block.coords, death->block.coords))
+			return 1;
+	}
+	return 0;
+}
+
+// Deallocazione dei blocchi del serpente e uscita dal programma.
+void killSnake() {
+	Snake *ptr = head;
+	// Deallocazione di tutti i blocchi del serpente
+	while(ptr != NULL) {
+		Snake* aux = ptr;
+		ptr = ptr->next;
+		free(aux);
+	}
+	// Uscita
+	exit(0);
+}
+
+/* Rilevamento collisione tra blocchi.
+ * Confronta le coordinate dei due blocchi: se coincidono
+ * allora sono sulla stessa cella e collidono.
+ */
+int detectCollision(int *block1, int *block2) {
+	return block1[0] == block2[0] && block1[1] == block2[1];
+}
+
+// Calcolo della posizione del frutto.
+void newFruit(void) {
+	for(int i = 0; i < 2; i++)
+		fruit.coords[i] = (int) rand() % 5;
+	fruit.trigger = 0;
+}
+
+// Preparazione al disegno del serpente nella scena.
+void drawSnakeHelper() {
+	#ifdef VAO
+		// Specifico il rispettivo Vertex Array
+		glBindVertexArray(vao[0]);
+	#endif
+
+	for(Snake *ptr = head; ptr != NULL; ptr = ptr->next) {
+		if(ptr == head) {
+			// Testa
+			#ifndef VAO
+				glColor3f(0.0, 0.0, 1.0);
+			#endif
+		} 
+		else {
+			// Corpo
+			#ifndef VAO
+				glColor3f(0.0, 1.0, 0.0);
+			#endif
+			/* Per far sì che il serpente si muova, è necessario che
+			 * l'i-esimo blocco segua la posizione di quello precedente:
+			 * si effettua quindi uno scambio di valori
+			 * tramite una variabile ausiliaria.
+			 */
+			for(int i = 0; i < 2; i++) {
+				snakeAuxCoords[i] 	 = ptr->block.coords[i];
+				ptr->block.coords[i] = ghostAuxCoords[i];
+				ghostAuxCoords[i] 	 = snakeAuxCoords[i];
+			}
+		}
+		// Disegno a video
+		#ifdef VAO
+			glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, VERTEX_NO*sizeof(GLuint));
+		#else
+			drawElement(ptr->block.coords);
+		#endif
+	}
+}
+
+// Preparazione al disegno del frutto nella scena.
+void drawFruitHelper() {
+	// Specifico il colore
+	#ifndef VAO
+		glColor3f(1.0, 0.0, 0.0);
+	#endif
+
+	// Disegno a video
+	#ifdef VAO
+		glBindVertexArray(vao[1]);
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+	#else
+		drawElement(fruit.coords);
+	#endif
+}
+
+// Disegna elementi a video.
+void drawElement(int *offset) {
+	glPushMatrix();
+	
+	// Utilizzo l'offset specificato in coordinate x,y
+	glTranslatef(offset[0]*CELL, offset[1]*CELL, 0);
+
+	glBegin(GL_TRIANGLE_STRIP);
+		// Specifico i vertici da disegnare nella scena
+		for(int i = 0; i < VERTEX_NO; i++)
+			glVertex2f(cubeVertexArray[i][0], cubeVertexArray[i][1]);
+	glEnd();
+	glPopMatrix();
+}
 
 // Input da tastiera.
 void keyInput(int key, int x, int y){
 	switch(key) {
 		case GLUT_KEY_UP:
-			fprintf(stderr, "up\n");
 			if(userDirection == down) 
 				break;
-			userDirection 		= up;
+			userDirection = up;
 			break;
 		case GLUT_KEY_DOWN:
-			fprintf(stderr, "down\n");
 			if(userDirection == up) 
 				break;
 			userDirection = down;
 			break;
 		case GLUT_KEY_RIGHT:
-					fprintf(stderr, "right\n");
 			if(userDirection == left) 
 				break;
-			userDirection 		= right;
+			userDirection = right;
 			break;
 		case GLUT_KEY_LEFT:
-					fprintf(stderr, "left\n");
 			if(userDirection == right) 
 				break;
 			userDirection = left;
@@ -174,250 +469,19 @@ void keyInput(int key, int x, int y){
 	}
 }
 
-// Gestisce l'input inserito dall'utente.
-void processInput() {
-	/* Aggiornamento della posizione del serpente in base alle coordinate specificate
-	 * dall'utente; gestione "effetto pacman"
-	 */
-	switch(userDirection) {
-		case up:
-			if(head->block.vertex[3][1] < 5.0) {
-				currPos[0] += 0.0;
-				currPos[1] += MOV;
- 			} else {
-				head->block.vertex[0][1] = -4.5;
-				head->block.vertex[1][1] = -5.0;
-				head->block.vertex[2][1] = -4.5;
-				head->block.vertex[3][1] = -5.0;
-			}
-			break;
-		case down:    
-			if(head->block.vertex[0][1] > -5.0) {
-				currPos[0] -= 0.0;
-				currPos[1] -= MOV;
- 			} else {
-				head->block.vertex[0][1] = 4.5;
-				head->block.vertex[1][1] = 5.0;
-				head->block.vertex[2][1] = 4.5;
-				head->block.vertex[3][1] = 5.0;
-			}
-			break;
-		case left:
- 			if(head->block.vertex[1][0] > -5.0) {
-				currPos[0] -= MOV;
-				currPos[1] -= 0.0;
- 			} else {
-				head->block.vertex[0][0] = 4.5;
-				head->block.vertex[1][0] = 4.5;
-				head->block.vertex[2][0] = 5.0;
-				head->block.vertex[3][0] = 5.0;
-			}
-			break;
-		case right:
- 			if(head->block.vertex[2][0] < 5.0) {
-				currPos[0] += MOV;
-				currPos[1] += 0.0;
- 			} else {
-				head->block.vertex[0][0] = -4.5;
-				head->block.vertex[1][0] = -4.5;
-				head->block.vertex[2][0] = -5.0;
-				head->block.vertex[3][0] = -5.0;
-			}
-			break;
+// Gestione tasti per uscita.
+void exitHandler(unsigned char key, int x, int y) {
+	switch(key) {
+		case 27:	// Esc
+		case 'q':	// q
+			// rilascio risorse e uscita
+			killSnake();
 		default:
 			break;
 	}
-	
-	// Salvo la posizione della testa
-	ghost = head->block;
-
-	// Scrivo le modifiche nella testa del serpente
-	for(int i = 0; i < VERTEX_NO; i++) {
-		for(int j = 0; j < 2; j++)
-			head->block.vertex[i][j] += currPos[j];
-	}
-	
-	// Svuoto il buffer per non accumulare le posizioni durante i refresh
-	for(int i = 0; i < 2; i++)
-		currPos[i] = 0.0;
-	for( Snake *morte=head->next;morte!=NULL;morte= morte->next){
-		if(head->block.vertex[0][0] == morte->block.vertex[0][0] && head->block.vertex[0][1] == morte->block.vertex[0][1]){
-			printf("SEI MORTO BRUTTO COGLIONE!!");
-			exit(-1);
-		}
-	}
-	
-	if( frutto.vertex[0][0] == head->block.vertex[0][0] && frutto.vertex[0][1] == head->block.vertex[0][1]){
-		frutto.trigger=1;
-		Snake *aux = malloc(sizeof(Snake));
-	
-		// Copia dei dati
-		aux->block = frutto;
-		
-		// Imposto il nuovo elemento come ultimo
-		aux->next = NULL;
-
-		// Se la lista è vuota, imposto questo elemento come primo
-		if(lastBlock != NULL)
-			lastBlock->next = aux;
-		lastBlock = aux;
-	}
-
-
 }
 
-void killSnake() {
-	Snake *ptr = head;
-	// Deallocazione di tutti i blocchi del serpente
-	while(ptr != NULL) {
-		Snake* aux = ptr;
-		ptr = ptr->next;
-		free(aux);
-	}
-}
-
-void drawSnake() {
-	for(Snake *ptr = head; ptr != NULL; ptr = ptr->next) {
-		if(ptr == head) {
-			glColor3f(0.0, 0.0, 1.0);
-		} else {
-			glColor3f(0.0, 1.0, 0.0);
-			// Effettuo lo scambio di variabili
-			ausilio 	= ptr->block;
-			ptr->block 	= ghost;
-			ghost 		= ausilio;
-		}
-		glPushMatrix();
-		glBegin(GL_TRIANGLE_STRIP);
-			// Specifico i vertici da disegnare nella scena
-			for(int i = 0; i < VERTEX_NO; i++)
-				glVertex2f(ptr->block.vertex[i][0], ptr->block.vertex[i][1]);
-		glEnd();
-		glPopMatrix();
-	}
-}
-
-void appendBlock(int index) {
-	// Allocazione nuovo elemento
-	Snake *aux = malloc(sizeof(Snake));
-	aux->block.trigger=0;
-	// Copia dei dati
-	aux->block = initialBlocks[index];
-	
-	// Imposto il nuovo elemento come ultimo
-	aux->next = NULL;
-
-	// Se la lista è vuota, imposto questo elemento come primo
-	if(lastBlock != NULL)
-		lastBlock->next = aux;
-	lastBlock = aux;
-}
-
-// Funzione helper per evitare warning su glutTimerFunc
-void helper(int val) {
+// Funzione helper per chiamata da glutTimerFunc.
+void redisplayHelper(int val) {
 	glutPostRedisplay();
-}
-
-// Inizializzazione della lista collegata del serpente.
-void snakeInit() {
-	// Inizializzazione lista vuota
-	head 		= NULL;
-	lastBlock 	= NULL;
-
-	// Inizializzazione elemento ausiliario
-	// ghost 		= NULL;
-	
-	// Inserimento di un blocco in coda
-	for(int i  = 0; i < INITIAL_BLOCK_NO; i++) {
-		appendBlock(i);
-		
-		// Salvo la posizione della testa
-		if(i == 0)
-			head = lastBlock;
-	}
-	
-	// Inizializzazione direzione iniziale
-	userDirection 	 = right;
-}
-
-void display() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	processInput();
-	if(frutto.trigger!=1)
-		spawnCubo();
-
-	// Disegno il serpente
-	drawSnake();
-	
-	// movate
-	glFlush();
-	glFinish();
-
-	#ifdef DOUBLE_BUFFER
-		glutSwapBuffers();
-	#endif
-
-	// Animazione del serpente
-	glutTimerFunc(10000/60, helper, 0);
-}
-
-void init() {
-	GLenum glErr;
-
-	// Inizializzazione serpente
-	snakeInit();
-
-	// Sfondo
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glEnable(GL_DEPTH_TEST);
-
-	// Proiezione ortogonale
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-5.0,5.0,-5.0,5.0,-2.0,2.0);
-
-	// Controllo errori
-    if ((glErr=glGetError()) != 0) {
-        printf("Errore = %d\n", glErr);
-        exit(-1);
-    }
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-}
-
-int main(int argc, char** argv) {
-	GLenum glewErr;
-	
-	frutto.trigger=0;
-
-	glutInit(&argc, argv);
-
-	#ifdef DOUBLE_BUFFER
-		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-	#else
-		glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-	#endif
-
-	glutInitWindowSize(1024, 768);
-	glutInitWindowPosition(800, 800);
-	glutCreateWindow("Snake 3D");
-
-
-	glewErr = glewInit();
-	if (glewErr != GLEW_OK) {
-		fprintf(stderr, "GLEW init failed: %s\n", glewGetErrorString(glewErr));
-		exit(1);
-	}
-	
-	glutSpecialFunc(keyInput);
-	glutKeyboardFunc(exitHandler);
-	
-	init();
-	glutDisplayFunc(display);
-	glutMainLoop();
-
-	return 0;
 }

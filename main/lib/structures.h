@@ -2,16 +2,20 @@
 #define VERTEX_NO   4
 // Numero di blocchi iniziali.
 #define INITIAL_BLOCK_NO    6
-// Velocità di movimento. (???)
-#define MOV (1.0/2.0)
+// Numero di celle della griglia.
+#define N_CELL  400
+// Dimensione della singola cella.
+#define CELL (1.0/2.0)
 
 /* struct _cube_t:
  * contiene informazioni sul singolo cubo.
  */
 struct _cube_t {
-    GLfloat vertex[VERTEX_NO][2];   // Vertici (x,y)
-    short int trigger;           // Trigger in caso di collisione con altri cubi
-                            // (sizeof(char) == 1)
+    //GLfloat vertex[VERTEX_NO][2];   // Vertici (x,y)
+    short int trigger;           	// Trigger in caso di collisione con altri cubi
+    int coords[2];					// Coordinate x, y per la griglia virtuale
+	/* int x,		
+		y;  */						//each cube has a y-coordinate and x-coordinate inside of the matrix
 };
 typedef struct _cube_t Cube;
 
@@ -26,4 +30,4 @@ typedef struct _snake_t {
 typedef snake_t Snake;
 
 // Definizione input per direzionare il serpente.
-typedef enum {up, down, left, right, none} Input;
+typedef enum {up, down, left, right} Input;
