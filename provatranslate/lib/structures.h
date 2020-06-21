@@ -6,6 +6,12 @@
 #define N_CELL  400
 #define CELL (1.0/2.0)
 
+typedef struct Material {
+    float	matAmbient[4],
+			matDiffuse[4],
+			matSpecular[4],
+			shine[1];
+} material_t;
 /* struct _cube_t:
  * contiene informazioni sul singolo cubo.
  */
@@ -14,8 +20,10 @@ struct _cube_t {
     short int trigger;           // Trigger in caso di collisione con altri cubi
     int coordx;
     int coordy;                 //each cube has a y-coordinate and x-coordinate inside of the matrix
+    material_t snakeMaterial;                
 };
 typedef struct _cube_t Cube;
+
 
 /* struct _snake_t: 
  * lista collegata di cubi.
