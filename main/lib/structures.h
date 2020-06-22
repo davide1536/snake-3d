@@ -6,13 +6,20 @@
 #define N_CELL  400
 // Dimensione della singola cella.
 #define CELL (1.0/2.0)
+// Valore del frutto.
+#define FRUIT_SCORE 10
 
-typedef struct Material {
+/* struct _material_t:
+ * contiene informazioni sul materiale dell'elemento.
+ */
+struct _material_t {
     float	matAmbient[4],
 			matDiffuse[4],
 			matSpecular[4],
 			shine[1];
-} material_t;
+};
+typedef struct _material_t Material;
+
 /* struct _cube_t:
  * contiene informazioni sul singolo cubo.
  */
@@ -22,7 +29,6 @@ struct _cube_t {
     int coords[2];					// Coordinate x, y per la griglia virtuale
 	/* int x,		
 		y;  */						//each cube has a y-coordinate and x-coordinate inside of the matrix
-    material_t material; 
 };
 typedef struct _cube_t Cube;
 
