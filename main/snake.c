@@ -39,18 +39,18 @@ int initialBlocks[INITIAL_BLOCK_NO][2] = {
 
 // Vertici dei cubi del serpente della scena.
 GLfloat cubeVertexArray[VERTEX_NO][3] = {
-	{0.5, 0.0, 0.0},
-	{0.5, -0.5, 0.0},
-	{0.0, 0.0, 0.0},
-	{0.0, -0.5, 0.0}
+		{0.25, 0.25},
+        {0.25, -0.25},
+        {-0.25, 0.25},
+		{-0.25, -0.25}
 };
 
 // Vertici dei frutti della scena.
 GLfloat fruitVertexArray[VERTEX_NO][3] = {
-	{0.5, 0.0, 0.0},
-	{0.5, -0.5, 0.0},
-	{0.0, 0.0, 0.0},
-	{0.0, -0.5, 0.0}
+		{0.25, 0.25},
+        {0.25, -0.25},
+        {-0.25, 0.25},
+        {-0.25, -0.25}
 };
 
 // Colori del serpente della scena.
