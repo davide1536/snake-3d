@@ -16,14 +16,14 @@ float xMov = 0,
 	  yMov = 0;
 
 int score = 0;
+int timeRefresh = 5000;
 
-
-material_t snakematerial = {
+Material snakeMaterial = {
     {0.6f, 0.35f, 0.05f,0.92},{0.6,0.35,0.5,0.92},{0.7,0.7,0.7,1.0},{120.0}
     // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
 };
 
-material_t fruitMaterial = {
+Material fruitMaterial = {
     {0.8f, 0.1f, 0.05f,0.92},{1.0,0.5,0.5,0.92},{0.7,0.7,0.7,1.0},{100.0}
     // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
 };
@@ -105,6 +105,7 @@ int main(int argc, char** argv) {
 // Inizializzazione principale del programma.
 void init() {
 	GLenum glErr;
+
 	initLight();
 
 	// Inizializzazione serpente
@@ -177,7 +178,6 @@ void snakeInit() {
 	
 	// Inizializzazione direzione iniziale
 	userDirection = right;
-	head->block.material = snakematerial;
 }
 
 // Aggiunta di un blocco al corpo del serpente.
@@ -281,7 +281,10 @@ void display() {
 	GLfloat lightPos[4] = {0.0,3.0,0.5,1.0};
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHT0);
+	drawGrill();
 	// Input (movimento)
 	processInput();
 
@@ -292,12 +295,14 @@ void display() {
 	// Se il frutto è stato mangiato, ne creo un altro
 	if(fruit.trigger)
 		newFruit();
+		
+	// Frutto
+	drawFruitHelper();
 
 	// Serpente
 	drawSnakeHelper();
 
-	// Frutto
-	drawFruitHelper();
+
 
 	//disabilito le luci per scrivere lo score
 	glDisable(GL_LIGHTING);
@@ -311,7 +316,27 @@ void display() {
 	glutSwapBuffers();
 
 	// Animazione del serpente
-	glutTimerFunc(5000/60, redisplayHelper, 0);
+	glutTimerFunc(timeRefresh/60, redisplayHelper, 0);
+}
+void drawGrill() {
+	for (int j = -10; j<N_COL-10; j++) {
+		glPushMatrix();
+			glTranslatef (j*CELL+0.25,0,0);
+			glBegin(GL_LINES);
+				glVertex3f (0,-5,0);
+				glVertex3f (0,5,0);
+			glEnd();
+		glPopMatrix();
+	}
+	for (int i = -10; i<N_ROWS-10; i++) {
+		glPushMatrix();
+			glTranslatef (0,i*CELL+0.25,0);
+			glBegin(GL_LINES);
+				glVertex3f (-5,0,0);
+				glVertex3f (5,0,0);
+			glEnd();
+		glPopMatrix();
+	}
 }
 
 // Modifica la scena in base all'input dell'utente.
@@ -322,6 +347,7 @@ void processInput() {
 	// Se i blocchi collidono, allora il serpente muore e il gioco finisce
 	if(isDying()) {
 		printf("Er pitonazzo è schiattato.\ngit gud\n");
+		printf ("Punteggio ottenuto: %d\n", score);
 		killSnake();
 	}
 	
@@ -330,7 +356,8 @@ void processInput() {
 		fruit.trigger = 1;
 		appendBlock(fruit.coords);
 		//updatescore
-		score += 10;
+		score += FRUIT_SCORE;
+		timeRefresh -= 100;
 	}
 }
 
@@ -432,10 +459,10 @@ void newFruit(void) {
 void drawSnakeHelper() {
 
 	//specific snake's material
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   head->block.material.matAmbient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   head->block.material.matDiffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  head->block.material.matSpecular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, head->block.material.shine);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   snakeMaterial.matAmbient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   snakeMaterial.matDiffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  snakeMaterial.matSpecular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, snakeMaterial.shine);
 
 	// Specifico il rispettivo Vertex Array
 	glBindVertexArray(vao[0]);
@@ -461,12 +488,11 @@ void drawSnakeHelper() {
 
 // Preparazione al disegno del frutto nella scena.
 void drawFruitHelper() {
-	fruit.material = fruitMaterial;
 
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   fruit.material.matAmbient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   fruit.material.matDiffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  fruit.material.matSpecular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, fruit.material.shine);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   fruitMaterial.matAmbient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   fruitMaterial.matDiffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  fruitMaterial.matSpecular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, fruitMaterial.shine);
 	// Specifico l'array object per i vertici
 	glBindVertexArray(vao[1]);
 	// Disegno a video
@@ -498,7 +524,7 @@ void writeScore() {
 	glRasterPos3f(xText*CELL,yText*CELL,0);
 	glPushMatrix();
 	// glTranslatef (xText*CELL,yText*CELL,0);
-	snprintf (stringScore,25,"score : %d",score);
+	snprintf(stringScore,25,"score : %d",score);
     writeBitmapString(GLUT_BITMAP_8_BY_13,stringScore);
 	glPopMatrix();
 };

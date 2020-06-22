@@ -46,3 +46,5 @@ void writeScore();
 void writeBitmapString(void *font, char *string);
 //inizializzo le luci
 void initLight();
+//inizializzazione griglia
+void drawGrill();

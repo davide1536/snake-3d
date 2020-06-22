@@ -4,15 +4,19 @@
 #define INITIAL_BLOCK_NO    6
 // Numero di celle della griglia.
 #define N_CELL  400
+#define FRUIT_SCORE 10
 // Dimensione della singola cella.
 #define CELL (1.0/2.0)
+#define N_COL 20
+#define N_ROWS 20
 
-typedef struct Material {
+struct _material_t {
     float	matAmbient[4],
 			matDiffuse[4],
 			matSpecular[4],
 			shine[1];
-} material_t;
+};
+typedef struct _material_t Material;
 /* struct _cube_t:
  * contiene informazioni sul singolo cubo.
  */
@@ -21,8 +25,7 @@ struct _cube_t {
     short int trigger;           	// Trigger in caso di collisione con altri cubi
     int coords[2];					// Coordinate x, y per la griglia virtuale
 	/* int x,		
-		y;  */						//each cube has a y-coordinate and x-coordinate inside of the matrix
-    material_t material; 
+		y;  */						//each cube has a y-coordinate and x-coordinate inside of the matrix 
 };
 typedef struct _cube_t Cube;
 
