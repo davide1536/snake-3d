@@ -6,7 +6,7 @@
 #include "lib/structures.h"	// Strutture dati personalizzate necessarie
 #include "lib/snake.h"		// Procedure per il serpente
 
-//#define VAO
+#define VAO
 
 // Coordinate ausiliarie per la griglia virtuale (serpente).
 int snakeAuxCoords[2] = {0, 0};
@@ -28,30 +28,36 @@ int initialBlocks[INITIAL_BLOCK_NO][2] = {
 };
 
 // Vertici dei cubi del serpente della scena.
-const GLfloat cubeVertexArray[VERTEX_NO][2] = {
-	{0.5, 0.0},
-	{0.5, -0.5},
-	{0.0, 0.0},
-	{0.0, -0.5}
+GLfloat cubeVertexArray[VERTEX_NO][3] = {
+	{0.5, 0.0, 0.0},
+	{0.5, -0.5, 0.0},
+	{0.0, 0.0, 0.0},
+	{0.0, -0.5, 0.0}
 };
 
 // Vertici dei frutti della scena.
-const GLfloat fruitVertexArray[VERTEX_NO][2] = {
-	{0.5, 0.0},
-	{0.5, -0.5},
-	{0.0, 0.0},
-	{0.0, -0.5}
+GLfloat fruitVertexArray[VERTEX_NO][3] = {
+	{0.5, 0.0, 0.0},
+	{0.5, -0.5, 0.0},
+	{0.0, 0.0, 0.0},
+	{0.0, -0.5, 0.0}
 };
 
 // Colori del serpente della scena.
-const GLfloat cubeColorArray[2][3] = {
-	{0.0, 0.0, 1.0},	// Testa
-	{0.0, 1.0, 0.0}		// Corpo
+GLfloat cubeColorArray[VERTEX_NO][3] = {
+	//{0.0, 0.0, 1.0},	// Testa
+	{0.0, 1.0, 0.0},	// Corpo
+	{0.0, 1.0, 0.0},
+	{0.0, 1.0, 0.0},
+	{0.0, 1.0, 0.0}
 };
 
 // Colori dei frutti della scena.
-const GLfloat fruitColorArray[3] = {
-	1.0, 0.0, 0.0
+GLfloat fruitColorArray[VERTEX_NO][3] = {
+	{1.0, 0.0, 0.0},
+	{1.0, 0.0, 0.0},
+	{1.0, 0.0, 0.0},
+	{1.0, 0.0, 0.0}
 };
 
 // Lista collegata rappresentante il serpente.
@@ -133,6 +139,7 @@ void init() {
     if ((glErr=glGetError()) != 0) {
         fprintf(stderr, "Errore = %d\n", glErr);
         //exit(-1);
+		fprintf(stderr, "%s\n", gluErrorString(glErr));
     }
 
 	glMatrixMode(GL_MODELVIEW);
@@ -187,7 +194,7 @@ void initVao() {
 	glEnableClientState(GL_COLOR_ARRAY);
 
 	// Generazione di due buffer ID
-	glGenBuffers(2, vao);
+	glGenVertexArrays(2, vao);
 
 	/**** vao[0]: cubi ****/
 	glBindVertexArray(vao[0]);
@@ -206,11 +213,11 @@ void initVao() {
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
 
-	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(cubeVertexArray));
 
-	/**** vao[1]: frutti ****/
-	glBindVertexArray(vao[1]);
+	 /**** vao[1]: frutti ****/
+	/* glBindVertexArray(vao[1]);
 	glGenBuffers(2, fruitBuffers);
 
 	// fruitBuffers[0]: vertici e colori
@@ -226,9 +233,9 @@ void initVao() {
 	
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
 
-	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(fruitVertexArray));
-
+	*/
 }
 
 // Funzione per glutDisplayFunc.
@@ -424,6 +431,9 @@ void drawFruitHelper() {
 	#else
 		drawElement(fruit.coords);
 	#endif
+	glColor3f(1.0, 0.0, 0.0);
+			drawElement(fruit.coords);
+
 }
 
 // Disegna elementi a video.
