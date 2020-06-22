@@ -15,6 +15,7 @@ int ghostAuxCoords[2] = {0, 0};
 float xMov = 0, 
 	  yMov = 0;
 
+// Punteggio.
 int score = 0;
 int timeRefresh = 5000;
 
@@ -27,6 +28,7 @@ Material fruitMaterial = {
     {0.8f, 0.1f, 0.05f,0.92},{1.0,0.5,0.5,0.92},{0.7,0.7,0.7,1.0},{100.0}
     // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
 };
+
 // Coordinate iniziali nella griglia per i cubi.
 int initialBlocks[INITIAL_BLOCK_NO][2] = { 
 	{0, 0},
@@ -63,11 +65,14 @@ Cube 	fruit;
 // Direzione inserita dall'utente.
 static Input userDirection;
 
-// VBO/VAO stuff
+// Vertex Array Object per due VBO.
 unsigned int vao[2];
 
+// VBO per blocchi del serpente.
 unsigned int cubeBuffers[2];
+// VBO per frutti.
 unsigned int fruitBuffers[2];
+// Array di indici per VBO.
 GLint cubeVertexIndices[VERTEX_NO];
 GLint fruitVertexIndices[VERTEX_NO];
 
@@ -302,12 +307,11 @@ void display() {
 	// Serpente
 	drawSnakeHelper();
 
-
-
-	//disabilito le luci per scrivere lo score
+	// Disabilito le luci per scrivere lo score
 	glDisable(GL_LIGHTING);
 	glDisable(GL_LIGHT0);
 	writeScore();
+
 	// movate
 	glFlush();
 	glFinish();
@@ -449,7 +453,7 @@ int detectCollision(int *block1, int *block2) {
 }
 
 // Calcolo della posizione del frutto.
-void newFruit(void) {
+void newFruit() {
 	for(int i = 0; i < 2; i++)
 		fruit.coords[i] = -9+(int) rand() % 19;
 	fruit.trigger = 0;
@@ -509,6 +513,7 @@ void drawElement(int *translate) {
 	glPopMatrix();
 }
 
+// Disegna a video il punteggio.
 void writeBitmapString(void *font, char *string) {
 	char *c;
    	for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
@@ -521,13 +526,14 @@ void writeScore() {
 	xText = 8;
 	yText = 9;
 
-	glRasterPos3f(xText*CELL,yText*CELL,0);
+	glRasterPos3f(xText*CELL, yText*CELL, 0);
 	glPushMatrix();
 	// glTranslatef (xText*CELL,yText*CELL,0);
 	snprintf(stringScore,25,"score : %d",score);
     writeBitmapString(GLUT_BITMAP_8_BY_13,stringScore);
 	glPopMatrix();
 };
+
 // Input da tastiera.
 void keyInput(int key, int x, int y){
 	switch(key) {
