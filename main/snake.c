@@ -6,8 +6,6 @@
 #include "lib/structures.h"	// Strutture dati personalizzate necessarie
 #include "lib/snake.h"		// Procedure per il serpente
 
-#define VAO
-
 // Coordinate ausiliarie per la griglia virtuale (serpente).
 int snakeAuxCoords[2] = {0, 0};
 // Coordinate ausiliarie per la griglia virtuale (serpente fantasma).
@@ -78,7 +76,6 @@ unsigned int fruitBuffers[2];
 GLint cubeVertexIndices[VERTEX_NO];
 GLint fruitVertexIndices[VERTEX_NO];
 
-
 int main(int argc, char** argv) {
 	GLenum glewErr;
 	
@@ -126,9 +123,7 @@ void init() {
 	// Depth buffer
 	glEnable(GL_DEPTH_TEST);
 
-	#ifdef VAO
-		initVao();
-	#endif
+	initVao();
 
 	// Proiezione ortogonale
 	glMatrixMode(GL_PROJECTION);
@@ -189,15 +184,15 @@ void appendBlock(int *newCoordinates) {
 
 // VAO.
 void initVao() {
-	// VBO: abilitazione buffer per vertici e colori
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-
 	// Generazione di due buffer ID
 	glGenVertexArrays(2, vao);
 
-	/**** vao[0]: cubi ****/
+	// vao[0]: cubi
 	glBindVertexArray(vao[0]);
+
+	// VBO: abilitazione buffer per vertici e colori
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
 
 	glGenBuffers(2, cubeBuffers);
 	// cubeBuffers[0]: vertici e colori
@@ -214,17 +209,20 @@ void initVao() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(cubeVertexArray));
+	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(cubeVertexArray)));
 
-	 /**** vao[1]: frutti ****/
-	/* glBindVertexArray(vao[1]);
+	// vao[1]: frutti
+	glBindVertexArray(vao[1]);
 	glGenBuffers(2, fruitBuffers);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
 
 	// fruitBuffers[0]: vertici e colori
 	glBindBuffer(GL_ARRAY_BUFFER, fruitBuffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray)+sizeof(fruitColorArray), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray) + sizeof(fruitColorArray), NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(fruitVertexArray), fruitVertexArray);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), sizeof(fruitColorArray), fruitColorArray);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), sizeof(fruitColorArray), fruitColorArray);
 
 	// fruitBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
@@ -235,8 +233,35 @@ void initVao() {
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(fruitVertexArray));
-	*/
+	/* buildVbo(cubeVertexArray, cubeColorArray, cubeVertexIndices, cubeBuffers, 0);
+	buildVbo(fruitVertexArray, fruitColorArray, fruitVertexIndices, fruitBuffers, 1); */
 }
+
+/* void buildVbo(GLfloat *vertexArray, GLfloat *colorArray, unsigned int *vertexIndices, unsigned int *buffer, int vaoIndex) {
+	// vao[0]: cubi
+	glBindVertexArray(vao[vaoIndex]);
+
+	// VBO: abilitazione buffer per vertici e colori
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	glGenBuffers(2, &buffer);
+	// cubeBuffers[0]: vertici e colori
+	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(&vertexArray) + sizeof(&colorArray), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(&vertexArray), &vertexArray);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(&vertexArray), sizeof(&colorArray), &colorArray);
+
+	// cubeBuffers[1]: indici
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer[1]);
+	for(int i = 0; i < VERTEX_NO; i++)
+		vertexIndices[i] = i;
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(&vertexIndices), &vertexIndices, GL_STATIC_DRAW);
+
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(&vertexArray)));
+} */
 
 // Funzione per glutDisplayFunc.
 void display() {
@@ -380,23 +405,12 @@ void newFruit(void) {
 
 // Preparazione al disegno del serpente nella scena.
 void drawSnakeHelper() {
-	#ifdef VAO
-		// Specifico il rispettivo Vertex Array
-		glBindVertexArray(vao[0]);
-	#endif
+	// Specifico il rispettivo Vertex Array
+	glBindVertexArray(vao[0]);
 
 	for(Snake *ptr = head; ptr != NULL; ptr = ptr->next) {
-		if(ptr == head) {
-			// Testa
-			#ifndef VAO
-				glColor3f(0.0, 0.0, 1.0);
-			#endif
-		} 
-		else {
+		if(ptr != head) {
 			// Corpo
-			#ifndef VAO
-				glColor3f(0.0, 1.0, 0.0);
-			#endif
 			/* Per far sì che il serpente si muova, è necessario che
 			 * l'i-esimo blocco segua la posizione di quello precedente:
 			 * si effettua quindi uno scambio di valori
@@ -409,45 +423,25 @@ void drawSnakeHelper() {
 			}
 		}
 		// Disegno a video
-		#ifdef VAO
-			glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, VERTEX_NO*sizeof(GLuint));
-		#else
-			drawElement(ptr->block.coords);
-		#endif
+		drawElement(ptr->block.coords);
 	}
 }
 
 // Preparazione al disegno del frutto nella scena.
 void drawFruitHelper() {
-	// Specifico il colore
-	#ifndef VAO
-		glColor3f(1.0, 0.0, 0.0);
-	#endif
-
+	// Specifico l'array object per i vertici
+	glBindVertexArray(vao[1]);
 	// Disegno a video
-	#ifdef VAO
-		glBindVertexArray(vao[1]);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-	#else
-		drawElement(fruit.coords);
-	#endif
-	glColor3f(1.0, 0.0, 0.0);
-			drawElement(fruit.coords);
-
+	drawElement(fruit.coords);
 }
 
 // Disegna elementi a video.
-void drawElement(int *offset) {
+void drawElement(int *translate) {
 	glPushMatrix();
-	
 	// Utilizzo l'offset specificato in coordinate x,y
-	glTranslatef(offset[0]*CELL, offset[1]*CELL, 0);
-
-	glBegin(GL_TRIANGLE_STRIP);
-		// Specifico i vertici da disegnare nella scena
-		for(int i = 0; i < VERTEX_NO; i++)
-			glVertex2f(cubeVertexArray[i][0], cubeVertexArray[i][1]);
-	glEnd();
+	glTranslatef(translate[0]*CELL, translate[1]*CELL, 0);
+	// Prendo i vertici da disegnare dai VBO
+	glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)0);
 	glPopMatrix();
 }
 
