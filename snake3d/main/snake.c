@@ -130,7 +130,7 @@ void init() {
 	// Proiezione ortogonale
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-5.0,5.0,-5.0,5.0,1.0,10.0);
+	glFrustum(-2.0,2.0,-2.0,2.0,1.0,10.0);
 
 	// Controllo errori
     if ((glErr=glGetError()) != 0) {
@@ -138,7 +138,7 @@ void init() {
         //exit(-1);
 		fprintf(stderr, "%s\n", gluErrorString(glErr));
     }
-	gluLookAt(0.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	gluLookAt(0.0, 6.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -524,7 +524,7 @@ void writeScore() {
 	char stringScore[25];
 	int xText,yText;
 
-	xText = 8;
+	xText = 5;
 	yText = 10;
 
 	glRasterPos3f(xText*CELL, yText*CELL, 0);
