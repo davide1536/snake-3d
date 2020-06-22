@@ -7,6 +7,12 @@
 // Dimensione della singola cella.
 #define CELL (1.0/2.0)
 
+typedef struct Material {
+    float	matAmbient[4],
+			matDiffuse[4],
+			matSpecular[4],
+			shine[1];
+} material_t;
 /* struct _cube_t:
  * contiene informazioni sul singolo cubo.
  */
@@ -16,6 +22,7 @@ struct _cube_t {
     int coords[2];					// Coordinate x, y per la griglia virtuale
 	/* int x,		
 		y;  */						//each cube has a y-coordinate and x-coordinate inside of the matrix
+    material_t material; 
 };
 typedef struct _cube_t Cube;
 

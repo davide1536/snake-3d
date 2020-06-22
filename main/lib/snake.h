@@ -41,3 +41,8 @@ void display(void);
 void init(void);
 // Disegna elementi a video.
 void drawElement(int*);
+//write score
+void writeScore();
+void writeBitmapString(void *font, char *string);
+//inizializzo le luci
+void initLight();

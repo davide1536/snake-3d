@@ -15,6 +15,18 @@ int ghostAuxCoords[2] = {0, 0};
 float xMov = 0, 
 	  yMov = 0;
 
+int score = 0;
+
+
+material_t snakematerial = {
+    {0.6f, 0.35f, 0.05f,0.92},{0.6,0.35,0.5,0.92},{0.7,0.7,0.7,1.0},{120.0}
+    // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
+};
+
+material_t fruitMaterial = {
+    {0.8f, 0.1f, 0.05f,0.92},{1.0,0.5,0.5,0.92},{0.7,0.7,0.7,1.0},{100.0}
+    // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
+};
 // Coordinate iniziali nella griglia per i cubi.
 int initialBlocks[INITIAL_BLOCK_NO][2] = { 
 	{0, 0},
@@ -110,6 +122,7 @@ int main(int argc, char** argv) {
 // Inizializzazione principale del programma.
 void init() {
 	GLenum glErr;
+	initLight();
 
 	// Inizializzazione serpente
 	snakeInit();
@@ -139,8 +152,30 @@ void init() {
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+
+void initLight() {
+	//define lighting
+    float globAmb[] = {1.0, 1.0, 1.0, 1.0};
+    float lightAmb[] = {0.8, 0.8,0.8, 1.0};
+	float lightDif[] = {0.3, 0.3, 0.3, 1.0};
+    float lightSpec[] = {0.2, 0.2, 0.2, 1.0};
+
+    glEnable(GL_LIGHTING);
+	
+	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDif);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpec);
+
+    // Global ambient light.
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb);
+
+	// Enable two-sided lighting.
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+	// Enable local viewpoint.
+	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+};
 
 // Inizializzazione della lista collegata del serpente.
 void snakeInit() {
@@ -159,6 +194,7 @@ void snakeInit() {
 	
 	// Inizializzazione direzione iniziale
 	userDirection = right;
+	head->block.material = snakematerial;
 }
 
 // Aggiunta di un blocco al corpo del serpente.
@@ -265,10 +301,16 @@ void initVao() {
 
 // Funzione per glutDisplayFunc.
 void display() {
+	GLfloat lightPos[4] = {0.0,3.0,0.5,1.0};
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	// Input (movimento)
 	processInput();
+
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
 	
 	// Se il frutto è stato mangiato, ne creo un altro
 	if(fruit.trigger)
@@ -279,7 +321,11 @@ void display() {
 
 	// Frutto
 	drawFruitHelper();
-	
+
+	//disabilito le luci per scrivere lo score
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHT0);
+	writeScore();
 	// movate
 	glFlush();
 	glFinish();
@@ -306,6 +352,8 @@ void processInput() {
 	if(detectCollision(fruit.coords, head->block.coords)) {
 		fruit.trigger = 1;
 		appendBlock(fruit.coords);
+		//updatescore
+		score += 10;
 	}
 }
 
@@ -399,12 +447,19 @@ int detectCollision(int *block1, int *block2) {
 // Calcolo della posizione del frutto.
 void newFruit(void) {
 	for(int i = 0; i < 2; i++)
-		fruit.coords[i] = (int) rand() % 5;
+		fruit.coords[i] = -9+(int) rand() % 19;
 	fruit.trigger = 0;
 }
 
 // Preparazione al disegno del serpente nella scena.
 void drawSnakeHelper() {
+
+	//specific snake's material
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   head->block.material.matAmbient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   head->block.material.matDiffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  head->block.material.matSpecular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, head->block.material.shine);
+
 	// Specifico il rispettivo Vertex Array
 	glBindVertexArray(vao[0]);
 
@@ -429,6 +484,12 @@ void drawSnakeHelper() {
 
 // Preparazione al disegno del frutto nella scena.
 void drawFruitHelper() {
+	fruit.material = fruitMaterial;
+
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   fruit.material.matAmbient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   fruit.material.matDiffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  fruit.material.matSpecular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, fruit.material.shine);
 	// Specifico l'array object per i vertici
 	glBindVertexArray(vao[1]);
 	// Disegno a video
@@ -445,6 +506,25 @@ void drawElement(int *translate) {
 	glPopMatrix();
 }
 
+void writeBitmapString(void *font, char *string) {
+	char *c;
+   	for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
+}
+
+void writeScore() {
+	char stringScore[25];
+	int xText,yText;
+
+	xText = 8;
+	yText = 9;
+
+	glRasterPos3f(xText*CELL,yText*CELL,0);
+	glPushMatrix();
+	// glTranslatef (xText*CELL,yText*CELL,0);
+	snprintf (stringScore,25,"score : %d",score);
+    writeBitmapString(GLUT_BITMAP_8_BY_13,stringScore);
+	glPopMatrix();
+};
 // Input da tastiera.
 void keyInput(int key, int x, int y){
 	switch(key) {
