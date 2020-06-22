@@ -53,23 +53,6 @@ GLfloat fruitVertexArray[VERTEX_NO][3] = {
         {-0.25, -0.25}
 };
 
-// Colori del serpente della scena.
-GLfloat cubeColorArray[VERTEX_NO][3] = {
-	//{0.0, 0.0, 1.0},	// Testa
-	{0.0, 1.0, 0.0},	// Corpo
-	{0.0, 1.0, 0.0},
-	{0.0, 1.0, 0.0},
-	{0.0, 1.0, 0.0}
-};
-
-// Colori dei frutti della scena.
-GLfloat fruitColorArray[VERTEX_NO][3] = {
-	{1.0, 0.0, 0.0},
-	{1.0, 0.0, 0.0},
-	{1.0, 0.0, 0.0},
-	{1.0, 0.0, 0.0}
-};
-
 // Lista collegata rappresentante il serpente.
 Snake 	*head,			// Testa del serpente (primo elemento)
 		*lastBlock;		// Ultimo blocco inserito
@@ -228,14 +211,12 @@ void initVao() {
 
 	// VBO: abilitazione buffer per vertici e colori
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
 
 	glGenBuffers(2, cubeBuffers);
-	// cubeBuffers[0]: vertici e colori
+	// cubeBuffers[0]: vertici
 	glBindBuffer(GL_ARRAY_BUFFER, cubeBuffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray) + sizeof(cubeColorArray), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertexArray), cubeVertexArray);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), sizeof(cubeColorArray), cubeColorArray);
 
 	// cubeBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeBuffers[1]);
@@ -245,20 +226,17 @@ void initVao() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(cubeVertexArray)));
 
 	// vao[1]: frutti
 	glBindVertexArray(vao[1]);
 	glGenBuffers(2, fruitBuffers);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
 
 	// fruitBuffers[0]: vertici e colori
 	glBindBuffer(GL_ARRAY_BUFFER, fruitBuffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray) + sizeof(fruitColorArray), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(fruitVertexArray), fruitVertexArray);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), sizeof(fruitColorArray), fruitColorArray);
 
 	// fruitBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
@@ -268,7 +246,6 @@ void initVao() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(fruitVertexArray));
 	/* buildVbo(cubeVertexArray, cubeColorArray, cubeVertexIndices, cubeBuffers, 0);
 	buildVbo(fruitVertexArray, fruitColorArray, fruitVertexIndices, fruitBuffers, 1); */
 }
