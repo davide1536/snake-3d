@@ -10,7 +10,7 @@
 struct BitMapFile *image = NULL;
 static GLenum textureID[1];
 
-char *fileName = "res/green(1).bmp";
+char *fileName = "res/textureMela.bmp";
 
 // Coordinate ausiliarie per la griglia virtuale (serpente).
 int snakeAuxCoords[2] = {0, 0};
@@ -39,7 +39,7 @@ Material fruitMaterial = {
 // Coordinate iniziali nella griglia per i cubi.
 int initialBlocks[INITIAL_BLOCK_NO][2] = { 
 	{0, 0},
-	{0, -1},
+	{0, -1}, 
 	{0, -2},
 	{0, -3},
 	{0, -4},
@@ -626,7 +626,7 @@ void drawFruitHelper() {
 	gluQuadricNormals(quad, GLU_SMOOTH);
 	glPushMatrix();
 		glTranslatef(fruit.coords[0]*CELL, 0 ,-fruit.coords[1]*CELL);
-		gluSphere(quad,0.50,100,100);
+		gluSphere(quad,0.4,100,100);
 	glPopMatrix();
 	// Disegno a video
 	//drawElement(fruit.coords);
