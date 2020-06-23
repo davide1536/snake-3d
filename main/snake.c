@@ -40,19 +40,77 @@ int initialBlocks[INITIAL_BLOCK_NO][2] = {
 };
 
 // Vertici dei cubi del serpente della scena.
-GLfloat cubeVertexArray[VERTEX_NO][3] = {
-		{0.25, 0.25},
-        {0.25, -0.25},
-        {-0.25, 0.25},
-		{-0.25, -0.25}
+GLfloat cubeVertexArray[FACES_NO*VERTEX_NO*3] = { 
+	//first face
+		0.25, 0.25, 0.25,
+        0.25, -0.25, 0.25,
+        -0.25, 0.25, 0.25,
+		-0.25, -0.25, 0.25,
+	//second face
+		-0.25, 0.25, 0.25,
+        -0.25, -0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, -0.25, -0.25,
+	//third face
+		-0.25, 0.25, -0.25,
+        -0.25, -0.25, -0.25,
+        0.25, 0.25, -0.25,
+		0.25, -0.25, -0.25,
+	//fourth face
+		0.25, 0.25, -0.25,
+        0.25, -0.25, -0.25,
+        0.25, 0.25, 0.25,
+		0.25, -0.25, 0.25,
+	//fifth face (lid)
+		0.25, 0.25, -0.25,
+        0.25, 0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, 0.25, 0.25
 };
 
 // Vertici dei frutti della scena.
-GLfloat fruitVertexArray[VERTEX_NO][3] = {
-		{0.25, 0.25},
-        {0.25, -0.25},
-        {-0.25, 0.25},
-        {-0.25, -0.25}
+GLfloat fruitVertexArray[FACES_NO*VERTEX_NO*3] = {
+	//first face
+		0.25, 0.25, 0.25,
+        0.25, -0.25, 0.25,
+        -0.25, 0.25, 0.25,
+		-0.25, -0.25, 0.25,
+	//second face
+		-0.25, 0.25, 0.25,
+        -0.25, -0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, -0.25, -0.25,
+	//third face
+		-0.25, 0.25, -0.25,
+        -0.25, -0.25, -0.25,
+        0.25, 0.25, -0.25,
+		0.25, -0.25, -0.25,
+	//fourth face
+		0.25, 0.25, -0.25,
+        0.25, -0.25, -0.25,
+        0.25, 0.25, 0.25,
+		0.25, -0.25, 0.25,
+	//fifth face (lid)
+		0.25, 0.25, -0.25,
+        0.25, 0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, 0.25, 0.25
+};
+
+// Vertici della griglia.
+GLfloat matrixVertexArray[MATRIX_VERTEX_NO][3] = {
+	{0.0, 0.0, -5.0},	// colonne
+	{0.0, 0.0, 5.0},
+	{-5.0, 0.0, 0.0},	// righe
+	{5.0, 0.0, 0.0}
+};
+
+// Colori della griglia.
+GLfloat matrixColorArray[MATRIX_VERTEX_NO][3] = {
+	{0.5, 0.5, 0.5},
+	{0.5, 0.5, 0.5},
+	{0.5, 0.5, 0.5},
+	{0.5, 0.5, 0.5},
 };
 
 // Lista collegata rappresentante il serpente.
@@ -65,16 +123,19 @@ Cube 	fruit;
 // Direzione inserita dall'utente.
 static Input userDirection;
 
-// Vertex Array Object per due VBO.
-unsigned int vao[2];
+// Vertex Array Object per VBO.
+unsigned int vao[3];
 
 // VBO per blocchi del serpente.
 unsigned int cubeBuffers[2];
 // VBO per frutti.
 unsigned int fruitBuffers[2];
+// VBO per griglia.
+unsigned int matrixBuffers[2];
 // Array di indici per VBO.
-GLint cubeVertexIndices[VERTEX_NO];
-GLint fruitVertexIndices[VERTEX_NO];
+GLint cubeVertexIndices[FACES_NO*VERTEX_NO];
+GLint fruitVertexIndices[FACES_NO*VERTEX_NO];
+GLint matrixVertexIndices[MATRIX_VERTEX_NO];
 
 int main(int argc, char** argv) {
 	GLenum glewErr;
@@ -130,7 +191,7 @@ void init() {
 	// Proiezione ortogonale
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-5.0,5.0,-5.0,5.0,-2.0,2.0);
+	glFrustum(-2.0,2.0,-2.0,2.0,1.0,10.0);
 
 	// Controllo errori
     if ((glErr=glGetError()) != 0) {
@@ -138,6 +199,7 @@ void init() {
         //exit(-1);
 		fprintf(stderr, "%s\n", gluErrorString(glErr));
     }
+	gluLookAt(0.0, 5.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -225,7 +287,7 @@ void initVao() {
 
 	// cubeBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeBuffers[1]);
-	for(int i = 0; i < VERTEX_NO; i++)
+	for(int i = 0; i < FACES_NO*VERTEX_NO; i++)
 		cubeVertexIndices[i] = i;
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
@@ -238,19 +300,42 @@ void initVao() {
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 
-	// fruitBuffers[0]: vertici e colori
+	// fruitBuffers[0]: vertici
 	glBindBuffer(GL_ARRAY_BUFFER, fruitBuffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(fruitVertexArray), fruitVertexArray);
 
 	// fruitBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
-	for(int i = 0; i < VERTEX_NO; i++)
+	for(int i = 0; i < FACES_NO * VERTEX_NO; i++)
 		fruitVertexIndices[i] = i;
 	
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
+
+	// vao[2]: griglia
+	glBindVertexArray(vao[2]);
+	glGenBuffers(2, matrixBuffers);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	// matrixBuffers[0]: vertici e colori
+	glBindBuffer(GL_ARRAY_BUFFER, matrixBuffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(matrixVertexArray) + sizeof(matrixColorArray), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(matrixVertexArray), matrixVertexArray);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(matrixVertexArray), sizeof(matrixColorArray), matrixColorArray);
+
+	// matrixBuffers[1]: indici
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, matrixBuffers[1]);
+	for(int i = 0; i < MATRIX_VERTEX_NO; i++)
+		matrixVertexIndices[i] = i;
+	
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(matrixVertexIndices), matrixVertexIndices, GL_STATIC_DRAW);
+
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(matrixVertexArray));
 	/* buildVbo(cubeVertexArray, cubeColorArray, cubeVertexIndices, cubeBuffers, 0);
 	buildVbo(fruitVertexArray, fruitColorArray, fruitVertexIndices, fruitBuffers, 1); */
 }
@@ -322,23 +407,19 @@ void display() {
 	// Animazione del serpente
 	glutTimerFunc(timeRefresh/60, redisplayHelper, 0);
 }
+
 void drawGrill() {
+	glBindVertexArray(vao[2]);
 	for (int j = -10; j<N_COL-10; j++) {
 		glPushMatrix();
-			glTranslatef (j*CELL+0.25,0,0);
-			glBegin(GL_LINES);
-				glVertex3f (0,-5,0);
-				glVertex3f (0,5,0);
-			glEnd();
+			glTranslatef(j*CELL+STEP, 0, 0);
+			glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, (GLvoid*)0);
 		glPopMatrix();
 	}
 	for (int i = -10; i<N_ROWS-10; i++) {
 		glPushMatrix();
-			glTranslatef (0,i*CELL+0.25,0);
-			glBegin(GL_LINES);
-				glVertex3f (-5,0,0);
-				glVertex3f (5,0,0);
-			glEnd();
+			glTranslatef(0, 0, i*CELL+STEP);
+			glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, (GLvoid*)(sizeof(GLuint)*2));
 		glPopMatrix();
 	}
 }
@@ -455,7 +536,7 @@ int detectCollision(int *block1, int *block2) {
 // Calcolo della posizione del frutto.
 void newFruit() {
 	for(int i = 0; i < 2; i++)
-		fruit.coords[i] = -9+(int) rand() % 19;
+		fruit.coords[i] = -10+(int) rand() % 20;
 	fruit.trigger = 0;
 }
 
@@ -507,9 +588,10 @@ void drawFruitHelper() {
 void drawElement(int *translate) {
 	glPushMatrix();
 	// Utilizzo l'offset specificato in coordinate x,y
-	glTranslatef(translate[0]*CELL, translate[1]*CELL, 0);
+	glTranslatef(translate[0]*CELL, 0 ,-translate[1]*CELL);
 	// Prendo i vertici da disegnare dai VBO
-	glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)0);
+	for (int indFace = 0; indFace < FACES_NO; indFace++)
+		glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)(indFace * VERTEX_NO * sizeof(GLuint)));
 	glPopMatrix();
 }
 
@@ -523,8 +605,8 @@ void writeScore() {
 	char stringScore[25];
 	int xText,yText;
 
-	xText = 8;
-	yText = 9;
+	xText = 5;
+	yText = 10;
 
 	glRasterPos3f(xText*CELL, yText*CELL, 0);
 	glPushMatrix();
