@@ -1,5 +1,7 @@
 // Numero di vertici.
 #define VERTEX_NO   4
+//numero di facce di ogni cubo che costituisce lo snake
+#define FACES_NO 5
 // Numero di blocchi iniziali.
 #define INITIAL_BLOCK_NO    6
 // Numero di celle della griglia.

@@ -40,19 +40,62 @@ int initialBlocks[INITIAL_BLOCK_NO][2] = {
 };
 
 // Vertici dei cubi del serpente della scena.
-GLfloat cubeVertexArray[VERTEX_NO][3] = {
-		{0.25, 0.25},
-        {0.25, -0.25},
-        {-0.25, 0.25},
-		{-0.25, -0.25}
+GLfloat cubeVertexArray[FACES_NO*VERTEX_NO*3] = { 
+	//first face
+		0.25, 0.25, 0.25,
+        0.25, -0.25, 0.25,
+        -0.25, 0.25, 0.25,
+		-0.25, -0.25, 0.25,
+	//second face
+		-0.25, 0.25, 0.25,
+        -0.25, -0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, -0.25, -0.25,
+	//third face
+		-0.25, 0.25, -0.25,
+        -0.25, -0.25, -0.25,
+        0.25, 0.25, -0.25,
+		0.25, -0.25, -0.25,
+	//fourth face
+		0.25, 0.25, -0.25,
+        0.25, -0.25, -0.25,
+        0.25, 0.25, 0.25,
+		0.25, -0.25, 0.25,
+	//fifth face (lid)
+		0.25, 0.25, -0.25,
+        0.25, 0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, 0.25, 0.25
+
 };
 
 // Vertici dei frutti della scena.
-GLfloat fruitVertexArray[VERTEX_NO][3] = {
-		{0.25, 0.25},
-        {0.25, -0.25},
-        {-0.25, 0.25},
-        {-0.25, -0.25}
+GLfloat fruitVertexArray[FACES_NO*VERTEX_NO*3] = {
+	//first face
+		0.25, 0.25, 0.25,
+        0.25, -0.25, 0.25,
+        -0.25, 0.25, 0.25,
+		-0.25, -0.25, 0.25,
+	//second face
+		-0.25, 0.25, 0.25,
+        -0.25, -0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, -0.25, -0.25,
+	//third face
+		-0.25, 0.25, -0.25,
+        -0.25, -0.25, -0.25,
+        0.25, 0.25, -0.25,
+		0.25, -0.25, -0.25,
+	//fourth face
+		0.25, 0.25, -0.25,
+        0.25, -0.25, -0.25,
+        0.25, 0.25, 0.25,
+		0.25, -0.25, 0.25,
+	//fifth face (lid)
+		0.25, 0.25, -0.25,
+        0.25, 0.25, 0.25,
+        -0.25, 0.25, -0.25,
+		-0.25, 0.25, 0.25
 };
 
 // Lista collegata rappresentante il serpente.
@@ -73,8 +116,8 @@ unsigned int cubeBuffers[2];
 // VBO per frutti.
 unsigned int fruitBuffers[2];
 // Array di indici per VBO.
-GLint cubeVertexIndices[VERTEX_NO];
-GLint fruitVertexIndices[VERTEX_NO];
+GLint cubeVertexIndices[FACES_NO * VERTEX_NO];
+GLint fruitVertexIndices[FACES_NO * VERTEX_NO];
 
 int main(int argc, char** argv) {
 	GLenum glewErr;
@@ -226,7 +269,7 @@ void initVao() {
 
 	// cubeBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeBuffers[1]);
-	for(int i = 0; i < VERTEX_NO; i++)
+	for(int i = 0; i < FACES_NO*VERTEX_NO; i++)
 		cubeVertexIndices[i] = i;
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
@@ -246,7 +289,7 @@ void initVao() {
 
 	// fruitBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
-	for(int i = 0; i < VERTEX_NO; i++)
+	for(int i = 0; i < FACES_NO * VERTEX_NO; i++)
 		fruitVertexIndices[i] = i;
 	
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
@@ -510,7 +553,8 @@ void drawElement(int *translate) {
 	// Utilizzo l'offset specificato in coordinate x,y
 	glTranslatef(translate[0]*CELL, 0 ,-translate[1]*CELL);
 	// Prendo i vertici da disegnare dai VBO
-	glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)0);
+	for (int indFace = 0; indFace < FACES_NO; indFace++)
+		glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (indFace * VERTEX_NO * sizeof(GLuint)));
 	glPopMatrix();
 }
 
