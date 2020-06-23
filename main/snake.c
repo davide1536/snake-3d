@@ -5,6 +5,12 @@
 #include <time.h>
 #include "lib/structures.h"	// Strutture dati personalizzate necessarie
 #include "lib/snake.h"		// Procedure per il serpente
+#include "lib/readBMP.h"
+//variabili globali per le texture 
+struct BitMapFile *image = NULL;
+static GLenum textureID[1];
+
+char *fileName = "res/green(1).bmp";
 
 // Coordinate ausiliarie per la griglia virtuale (serpente).
 int snakeAuxCoords[2] = {0, 0};
@@ -25,7 +31,8 @@ Material snakeMaterial = {
 };
 
 Material fruitMaterial = {
-    {0.8f, 0.1f, 0.05f,0.92},{1.0,0.5,0.5,0.92},{0.7,0.7,0.7,1.0},{100.0}
+	{0.3f, 0.33f, 0.4f,0.92},{0.4,0.4,0.4,0.92},{0.7,0.7,0.7,1.0},{120.0}
+    //{0.8f, 0.1f, 0.05f,0.92},{1.0,0.5,0.5,0.92},{0.7,0.7,0.7,1.0},{100.0}
     // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
 };
 
@@ -68,7 +75,7 @@ GLfloat cubeVertexArray[FACES_NO*VERTEX_NO*3] = {
 		-0.25, 0.25, 0.25
 };
 
-// Vertici dei frutti della scena.
+//Vertici dei frutti della scena.
 GLfloat fruitVertexArray[FACES_NO*VERTEX_NO*3] = {
 	//first face
 		0.25, 0.25, 0.25,
@@ -156,7 +163,14 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "GLEW init failed: %s\n", glewGetErrorString(glewErr));
 		exit(1);
 	}
-	
+
+	image = readBMP(fileName);
+    if (image == NULL) {
+        printf("readBMP: Could not openfile: %s \n", fileName);
+        exit(1);
+    } else {
+        printf("File %s has size %d x %d \n", fileName, image->sizeX, image->sizeY);
+    }
 	// Gestione input da tastiera:
 	glutSpecialFunc(keyInput);		// tasti speciali (GLUT_KEY_*) per movimento
 	glutKeyboardFunc(exitHandler);	// tasti (ESC...) per uscita
@@ -173,6 +187,8 @@ void init() {
 	GLenum glErr;
 
 	initLight();
+
+	initTexture();
 
 	// Inizializzazione serpente
 	snakeInit();
@@ -199,7 +215,7 @@ void init() {
         //exit(-1);
 		fprintf(stderr, "%s\n", gluErrorString(glErr));
     }
-	gluLookAt(0.0, 5.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	gluLookAt(0.0, 6.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -227,6 +243,24 @@ void initLight() {
 	// Enable local viewpoint.
 	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 };
+
+void initTexture() {
+	glGenTextures (1,textureID);
+    //define texture for snake's head.
+    glBindTexture (GL_TEXTURE_2D, textureID[0]);
+    glTexImage2D (GL_TEXTURE_2D,0,GL_RGBA,image->sizeX,image->sizeY,0,GL_RGBA,GL_UNSIGNED_BYTE,image->data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  //da cambiare
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //da cambiare
+    //enable mipmap
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	glEnable(GL_TEXTURE_2D);
+}
 
 // Inizializzazione della lista collegata del serpente.
 void snakeInit() {
@@ -383,11 +417,15 @@ void display() {
 	glEnable(GL_LIGHT0);
 	
 	// Se il frutto è stato mangiato, ne creo un altro
+	
 	if(fruit.trigger)
 		newFruit();
-		
+
+	glBindTexture(GL_TEXTURE_2D, textureID[0]);	
 	// Frutto
 	drawFruitHelper();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Serpente
 	drawSnakeHelper();
@@ -579,9 +617,19 @@ void drawFruitHelper() {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  fruitMaterial.matSpecular);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, fruitMaterial.shine);
 	// Specifico l'array object per i vertici
-	glBindVertexArray(vao[1]);
+	//glBindVertexArray(vao[1]);
+	GLUquadric *quad;											
+	quad = gluNewQuadric();										
+	gluQuadricDrawStyle(quad, GLU_FILL);
+	glBindTexture(GL_TEXTURE_2D, textureID[0]);
+	gluQuadricTexture(quad, GL_TRUE);
+	gluQuadricNormals(quad, GLU_SMOOTH);
+	glPushMatrix();
+		glTranslatef(fruit.coords[0]*CELL, 0 ,-fruit.coords[1]*CELL);
+		gluSphere(quad,0.50,100,100);
+	glPopMatrix();
 	// Disegno a video
-	drawElement(fruit.coords);
+	//drawElement(fruit.coords);
 }
 
 // Disegna elementi a video.
