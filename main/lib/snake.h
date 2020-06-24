@@ -23,6 +23,8 @@ void newFruit(void);
 void drawFruitHelper(void);
 
 /**** ALTRO ****/
+// Stampa a video del messaggio di aiuto.
+void printHelp(char*);
 // VAO.
 void initVao(void);
 // VBO.
@@ -41,12 +43,12 @@ void display(void);
 void init(void);
 // Disegna elementi a video.
 void drawElement(int*);
-//write score
+// Disegna a video il punteggio.
 void writeScore();
 void writeBitmapString(void *font, char *string);
-//inizializzo le luci
-void initLight();
-//inizializzo le texture
-void initTexture();
-//inizializzazione griglia
-void drawGrill();
+// Inizializzo le luci.
+void initLight(void);
+// Inizializzazione delle texture.
+void initTexture(void);
+// Inizializzazione della griglia.
+void drawGrill(void);

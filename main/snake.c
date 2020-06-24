@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "lib/structures.h"	// Strutture dati personalizzate necessarie
 #include "lib/snake.h"		// Procedure per il serpente
 #include "lib/readBMP.h"
@@ -144,9 +145,27 @@ GLint cubeVertexIndices[FACES_NO*VERTEX_NO];
 GLint fruitVertexIndices[FACES_NO*VERTEX_NO];
 GLint matrixVertexIndices[MATRIX_VERTEX_NO];
 
+// Flags.
+short int allowIncrementalSpeed = 1,
+		  requestHelp			= 0;
+
 int main(int argc, char** argv) {
 	GLenum glewErr;
-	
+
+	// Controllo degli argomenti
+	if(argc > 1) {
+		for(int i = 1; i < argc; i++) {
+			if(!strcmp(argv[i], "--no-incremental-speed"))
+				allowIncrementalSpeed = 0;
+			else
+				requestHelp = 1;
+		}
+		if(requestHelp) {
+			printHelp(argv[0]);
+			exit(0);
+		}
+	}
+
 	glutInit(&argc, argv);
 
 	// Double buffering
@@ -182,15 +201,18 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-/* void parseArgs(int argc, char** argv) {
-
-} */
+// Stampa a video del messaggio di aiuto.
+void printHelp(char* programName) {
+	printf("Uso: %s [ARGOMENTI]\n", programName);
+	printf("\nArgomenti:\n");
+	printf("\t--help\t\t\tStampa a video questo messagio ed esce dal programma.\n");
+	printf("\t--no-incremental-speed\tDisabilita l'aumento della velocità del serpente ad ogni frutto mangiato.\n");
+	exit(0);
+}
 
 // Inizializzazione principale del programma.
 void init() {
 	GLenum glErr;
-
-	
 
 	initLight();
 
@@ -385,7 +407,7 @@ void initVao() {
 	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(matrixVertexArray));
 }
 
-void buildVbo(GLfloat *vertexArray, int vertexArraySize, GLfloat *colorArray, unsigned int *vertexIndices, unsigned int *buffer, int vaoIndex) {
+/* void buildVbo(GLfloat *vertexArray, int vertexArraySize, GLfloat *colorArray, unsigned int *vertexIndices, unsigned int *buffer, int vaoIndex) {
 	GLsizeiptr size;
 
 	size = colorArray == NULL ? sizeof(vertexArray) : sizeof(vertexArray) + sizeof(colorArray);
@@ -453,7 +475,7 @@ void buildVbo(GLfloat *vertexArray, int vertexArraySize, GLfloat *colorArray, un
 	if(colorArray != NULL)
 		glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(vertexArray)));
 }
-
+ */
 // Funzione per glutDisplayFunc.
 void display() {
 	GLfloat lightPos[4] = {0.0,3.0,0.5,1.0};
@@ -532,9 +554,11 @@ void processInput() {
 	if(detectCollision(fruit.coords, head->block.coords)) {
 		fruit.trigger = 1;
 		appendBlock(fruit.coords);
-		//updatescore
+		// Aggiorna punteggio
 		score += FRUIT_SCORE;
-		timeRefresh -= 100;
+		// Aumenta il refresh rate se l'utente non l'ha disabilitato
+		if(allowIncrementalSpeed)
+			timeRefresh -= 100;
 	}
 }
 
@@ -634,8 +658,7 @@ void newFruit() {
 
 // Preparazione al disegno del serpente nella scena.
 void drawSnakeHelper() {
-
-	//specific snake's material
+	// Specifico il materiale del serpente
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   snakeMaterial.matAmbient);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   snakeMaterial.matDiffuse);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  snakeMaterial.matSpecular);
@@ -665,7 +688,7 @@ void drawSnakeHelper() {
 
 // Preparazione al disegno del frutto nella scena.
 void drawFruitHelper() {
-
+	// Specifico il materiale del frutto
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   fruitMaterial.matAmbient);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   fruitMaterial.matDiffuse);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  fruitMaterial.matSpecular);
