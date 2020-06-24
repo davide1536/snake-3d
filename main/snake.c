@@ -587,7 +587,7 @@ void processInput() {
 
 	// Se i blocchi collidono, allora il serpente muore e il gioco finisce
 	if(isDying()) {
-		printf("Er pitonazzo è schiattato.\ngit gud\n");
+		printf("Game over!\n");
 		printf ("Punteggio ottenuto: %d\n", score);
 		killSnake();
 	}
@@ -693,8 +693,27 @@ int detectCollision(int *block1, int *block2) {
 
 // Calcolo della posizione del frutto.
 void newFruit() {
+	int aux[2];
+	short int collision;
+
+	/* Effettua un controllo con la posizione di tutti i blocchi del serpente
+	 * per non spawnarci sopra.
+	 */
+	do {
+		collision = 0;
+
+		for(int i = 0; i < 2; i++)
+			aux[i] = -10+(int) rand() % 20;
+
+		for(Snake* ptr = head; ptr != NULL; ptr = ptr->next) {
+			if(detectCollision(aux, ptr->block.coords))
+				collision = 1;
+		}
+	} while(collision);
+
 	for(int i = 0; i < 2; i++)
-		fruit.coords[i] = -10+(int) rand() % 20;
+		fruit.coords[i] = aux[i];
+	
 	fruit.trigger = 0;
 }
 
