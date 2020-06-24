@@ -266,7 +266,7 @@ void init() {
         //exit(-1);
 		fprintf(stderr, "%s\n", gluErrorString(glErr));
     }
-	gluLookAt(0.0, 5.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	gluLookAt(0.0, 5.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -588,7 +588,7 @@ void processInput() {
 	// Se i blocchi collidono, allora il serpente muore e il gioco finisce
 	if(isDying()) {
 		printf("Game over!\n");
-		printf ("Punteggio ottenuto: %d\n", score);
+		printf("Punteggio ottenuto: %d\n", score);
 		killSnake();
 	}
 	
