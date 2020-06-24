@@ -25,8 +25,8 @@ void drawFruitHelper(void);
 /**** ALTRO ****/
 // VAO.
 void initVao(void);
-/* // VBO.
-void buildVbo(GLfloat*, GLfloat*, unsigned int*, unsigned int*, int); */
+// VBO.
+void buildVbo(GLfloat*, int, GLfloat*, unsigned int*, unsigned int*, int);
 // Funzione helper per chiamata da glutTimerFunc.
 void redisplayHelper(int);
 // Gestione tasti per uscita.

@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 
 	// Double buffering
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
 	// Definizione proprieta' finestra principale
 	glutInitWindowSize(1024, 768);
@@ -182,9 +182,15 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+/* void parseArgs(int argc, char** argv) {
+
+} */
+
 // Inizializzazione principale del programma.
 void init() {
 	GLenum glErr;
+
+	
 
 	initLight();
 
@@ -304,8 +310,15 @@ void appendBlock(int *newCoordinates) {
 
 // VAO.
 void initVao() {
+	// Cubi
+	glGenVertexArrays(3, vao);
+	/* buildVbo((GLfloat*)cubeVertexArray, FACES_NO*VERTEX_NO, NULL, (unsigned int*)cubeVertexIndices, (unsigned int*)cubeBuffers, 0);
+	buildVbo((GLfloat*)fruitVertexArray, FACES_NO*VERTEX_NO, NULL, (unsigned int*)fruitVertexIndices, (unsigned int*)fruitBuffers, 1);
+	buildVbo((GLfloat*)matrixVertexArray, MATRIX_VERTEX_NO, (GLfloat*)matrixColorArray, (unsigned int*)matrixVertexIndices, (unsigned int*)matrixBuffers, 2);
+ */
+
 	// Generazione di due buffer ID
-	glGenVertexArrays(2, vao);
+	glGenVertexArrays(3, vao);
 
 	// vao[0]: cubi
 	glBindVertexArray(vao[0]);
@@ -370,35 +383,76 @@ void initVao() {
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(matrixVertexArray));
-	/* buildVbo(cubeVertexArray, cubeColorArray, cubeVertexIndices, cubeBuffers, 0);
-	buildVbo(fruitVertexArray, fruitColorArray, fruitVertexIndices, fruitBuffers, 1); */
 }
 
-/* void buildVbo(GLfloat *vertexArray, GLfloat *colorArray, unsigned int *vertexIndices, unsigned int *buffer, int vaoIndex) {
+void buildVbo(GLfloat *vertexArray, int vertexArraySize, GLfloat *colorArray, unsigned int *vertexIndices, unsigned int *buffer, int vaoIndex) {
+	GLsizeiptr size;
+
+	size = colorArray == NULL ? sizeof(vertexArray) : sizeof(vertexArray) + sizeof(colorArray);
+	
+	// debug
+	switch(vaoIndex) {
+		case 0:
+			fprintf(stderr, "Vertex %d:\n", vaoIndex);
+			for(int i = 0; i < FACES_NO*VERTEX_NO*3; i++) {
+				fprintf(stderr, "%f ", vertexArray[i]);
+			}
+			break;
+		case 1:
+					fprintf(stderr, "Vertex %d:\n", vaoIndex);
+
+			for(int i = 0; i < vertexArraySize*3; i++) {
+				fprintf(stderr, "%f ", vertexArray[i]);
+			}
+			break;
+		case 2:
+					fprintf(stderr, "Vertex %d:\n", vaoIndex);
+
+			for(int i = 0; i < vertexArraySize*3; i++) {
+				fprintf(stderr, "%f ", vertexArray[i]);
+			}
+						fprintf(stderr, "\nColors %d:\n", vaoIndex);
+			for(int i = 0; i < MATRIX_VERTEX_NO*3; i++) {
+				fprintf(stderr, "%f ", colorArray[i]);
+			}
+			break;
+		default:
+			break;
+	}
+	fprintf(stderr, "\n\n");
+	
 	// vao[0]: cubi
 	glBindVertexArray(vao[vaoIndex]);
 
 	// VBO: abilitazione buffer per vertici e colori
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
+	if(colorArray != NULL)
+		glEnableClientState(GL_COLOR_ARRAY);
 
 	glGenBuffers(2, &buffer);
-	// cubeBuffers[0]: vertici e colori
-	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(&vertexArray) + sizeof(&colorArray), NULL, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(&vertexArray), &vertexArray);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(&vertexArray), sizeof(&colorArray), &colorArray);
+	// cubeBuffers[0]: vertici, colori
+	glBindBuffer(GL_ARRAY_BUFFER, &buffer[0]);
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexArray), vertexArray);
+
+	if(colorArray != NULL)
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertexArray), sizeof(colorArray), colorArray);
 
 	// cubeBuffers[1]: indici
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer[1]);
-	for(int i = 0; i < VERTEX_NO; i++)
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &buffer[1]);
+	fprintf(stderr, "Indici: ");
+	for(int i = 0; i < vertexArraySize; i++) {
 		vertexIndices[i] = i;
+		fprintf(stderr, "%d ", vertexIndices[i]);
+	}
+	fprintf(stderr, "\n");
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(&vertexIndices), &vertexIndices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertexIndices), vertexIndices, GL_STATIC_DRAW);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(&vertexArray)));
-} */
+	if(colorArray != NULL)
+		glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(vertexArray)));
+}
 
 // Funzione per glutDisplayFunc.
 void display() {
