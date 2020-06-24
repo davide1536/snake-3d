@@ -149,6 +149,13 @@ GLint matrixVertexIndices[MATRIX_VERTEX_NO];
 short int allowIncrementalSpeed = 1,
 		  requestHelp			= 0;
 
+/* Variabile di blocco della posizione:
+ * l'input dell'utente relativo alla posizione
+ * viene scartato se il serpente non ha ancora
+ * completato lo spostamento.
+ */
+short int lock = 0;
+
 int main(int argc, char** argv) {
 	GLenum glewErr;
 
@@ -243,7 +250,7 @@ void init() {
         //exit(-1);
 		fprintf(stderr, "%s\n", gluErrorString(glErr));
     }
-	gluLookAt(0.0, 6.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	gluLookAt(0.0, 5.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -475,7 +482,7 @@ void initVao() {
 	if(colorArray != NULL)
 		glColorPointer(3, GL_FLOAT, 0, (GLvoid*)(sizeof(vertexArray)));
 }
- */
+*/
 // Funzione per glutDisplayFunc.
 void display() {
 	GLfloat lightPos[4] = {0.0,3.0,0.5,1.0};
@@ -520,6 +527,8 @@ void display() {
 
 	// Animazione del serpente
 	glutTimerFunc(timeRefresh/60, redisplayHelper, 0);
+
+	lock = 0;
 }
 
 void drawGrill() {
@@ -743,26 +752,32 @@ void writeScore() {
 
 // Input da tastiera.
 void keyInput(int key, int x, int y){
+	if(lock == 1)
+		return;
 	switch(key) {
 		case GLUT_KEY_UP:
 			if(userDirection == down) 
 				break;
 			userDirection = up;
+			lock = 1;
 			break;
 		case GLUT_KEY_DOWN:
 			if(userDirection == up) 
 				break;
 			userDirection = down;
+			lock = 1;
 			break;
 		case GLUT_KEY_RIGHT:
 			if(userDirection == left) 
 				break;
 			userDirection = right;
+			lock = 1;
 			break;
 		case GLUT_KEY_LEFT:
 			if(userDirection == right) 
 				break;
 			userDirection = left;
+			lock = 1;
 			break;
 		default:
 			break;
