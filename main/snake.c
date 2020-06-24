@@ -10,9 +10,9 @@
 //variabili globali per le texture 
 struct BitMapFile *image = NULL;
 struct BitMapFile *image2 = NULL;
-static GLenum textureID[1];
+static GLenum textureID[2];
 
-char *fileName = "res/textureMela.bmp";
+char *fileName = "res/mela.bmp";
 char *fileName2 = "res/skin.bmp";
 
 // Coordinate ausiliarie per la griglia virtuale (serpente).
@@ -295,7 +295,7 @@ void initLight() {
 
 void initTexture() {
 	glGenTextures (2,textureID);
-    //define texture for snake's head.
+    //texture mela
     glBindTexture (GL_TEXTURE_2D, textureID[0]);
     glTexImage2D (GL_TEXTURE_2D,0,GL_RGBA,image->sizeX,image->sizeY,0,GL_RGBA,GL_UNSIGNED_BYTE,image->data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
