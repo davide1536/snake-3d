@@ -566,13 +566,13 @@ void display() {
 
 void drawGrill() {
 	glBindVertexArray(vao[1]);
-	for (int j = -10; j<N_COL-10; j++) {
+	for (int j = -N_COL/2; j<N_COL-N_COL/2; j++) {
 		glPushMatrix();
 			glTranslatef(j*CELL+STEP, 0, 0);
 			glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, (GLvoid*)0);
 		glPopMatrix();
 	}
-	for (int i = -10; i<N_ROWS-10; i++) {
+	for (int i = -N_ROWS/2; i<N_ROWS-N_ROWS/2; i++) {
 		glPushMatrix();
 			glTranslatef(0, 0, i*CELL+STEP);
 			glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, (GLvoid*)(sizeof(GLuint)*2));
@@ -611,39 +611,39 @@ void updateSnakeHead() {
 	 */
 	switch(userDirection) {
 		case up:
-			if( head->block.coords[1] < 10) { 
+			if( head->block.coords[1] < MATRIX_BORDER_TOP) { 
 				yMov = 1;
                 xMov = 0;
  			} else {
-				yMov = -20;
+				yMov = MATRIX_BORDER_BOTTOM*2;
                 xMov = 0;
 			}
 			break;
 		case down:    
-			if( head->block.coords[1] > -10) {
+			if( head->block.coords[1] > MATRIX_BORDER_BOTTOM) {
 				yMov = -1;
                 xMov = 0;				
  			} else {
-				yMov = 20;
+				yMov = MATRIX_BORDER_TOP*2;
 				xMov =  0;
 			}
 			break;
 		case left:
- 			if( head->block.coords[0] > -10) {
+ 			if( head->block.coords[0] > MATRIX_BORDER_LEFT) {
 				xMov = -1;
                 yMov = 0;
 				
  			} else {
-				xMov = 20;
+				xMov = MATRIX_BORDER_RIGHT*2;
 				yMov = 0;
 			}
 			break;
 		case right:
- 			if( head->block.coords[0] < 10) {
+ 			if( head->block.coords[0] < MATRIX_BORDER_RIGHT ) {
 				xMov = 1;
                 yMov = 0;
  			} else {
-				xMov = -20;
+				xMov = MATRIX_BORDER_LEFT*2;
                 yMov = 0;
 			}
 			break;

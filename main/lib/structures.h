@@ -16,7 +16,12 @@
 // Numero di vertici da disegnare per la griglia.
 #define MATRIX_VERTEX_NO 4
 // Step della griglia.
-#define STEP 0.25
+#define STEP CELL/2
+
+#define MATRIX_BORDER_TOP 10
+#define MATRIX_BORDER_BOTTOM -10
+#define MATRIX_BORDER_LEFT -10
+#define MATRIX_BORDER_RIGHT 10
 
 /* struct _material_t:
  * contiene informazioni sui materiali degli elementi della scena.
