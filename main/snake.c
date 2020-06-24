@@ -7,6 +7,7 @@
 #include "lib/structures.h"	// Strutture dati personalizzate necessarie
 #include "lib/snake.h"		// Procedure per il serpente
 #include "lib/readBMP.h"
+
 //variabili globali per le texture 
 struct BitMapFile *image = NULL;
 struct BitMapFile *image2 = NULL;
@@ -135,7 +136,7 @@ Cube 	fruit;
 static Input userDirection;
 
 // Vertex Array Object per VBO.
-unsigned int vao[3];
+unsigned int vao[2];
 
 // VBO per blocchi del serpente.
 unsigned int cubeBuffers[2];
@@ -150,7 +151,8 @@ GLint matrixVertexIndices[MATRIX_VERTEX_NO];
 
 // Flags.
 short int allowIncrementalSpeed = 1,
-		  requestHelp			= 0;
+		  requestHelp			= 0,
+		  fullscreen 			= 0;
 
 /* Variabile di blocco della posizione:
  * l'input dell'utente relativo alla posizione
@@ -167,6 +169,8 @@ int main(int argc, char** argv) {
 		for(int i = 1; i < argc; i++) {
 			if(!strcmp(argv[i], "--no-incremental-speed"))
 				allowIncrementalSpeed = 0;
+			else if(!strcmp(argv[i], "--fullscreen"))
+				fullscreen = 1;
 			else
 				requestHelp = 1;
 		}
@@ -185,7 +189,10 @@ int main(int argc, char** argv) {
 	glutInitWindowSize(1024, 768);
 	glutInitWindowPosition(800, 800);
 	glutCreateWindow("Snake 3D");
-	glutFullScreen();
+
+	if(fullscreen)
+		glutFullScreen();
+	
 	// Inizializzazione glew
 	glewErr = glewInit();
 	if (glewErr != GLEW_OK) {
@@ -197,17 +204,14 @@ int main(int argc, char** argv) {
     if (image == NULL) {
         printf("readBMP: Could not openfile: %s \n", fileName);
         exit(1);
-    } else {
-        printf("File %s has size %d x %d \n", fileName, image->sizeX, image->sizeY);
     }
 
 	image2 = readBMP(fileName2);
     if (image2 == NULL) {
         printf("readBMP: Could not openfile: %s \n", fileName2);
         exit(1);
-    } else {
-        printf("File %s has size %d x %d \n", fileName2, image2->sizeX, image2->sizeY);
     }
+	
 	// Gestione input da tastiera:
 	glutSpecialFunc(keyInput);		// tasti speciali (GLUT_KEY_*) per movimento
 	glutKeyboardFunc(exitHandler);	// tasti (ESC...) per uscita
@@ -223,8 +227,9 @@ int main(int argc, char** argv) {
 void printHelp(char* programName) {
 	printf("Uso: %s [ARGOMENTI]\n", programName);
 	printf("\nArgomenti:\n");
-	printf("\t--help\t\t\tStampa a video questo messagio ed esce dal programma.\n");
+	printf("\t--help\t\t\tStampa a video questo messaggio ed esce dal programma.\n");
 	printf("\t--no-incremental-speed\tDisabilita l'aumento della velocità del serpente ad ogni frutto mangiato.\n");
+	printf("\t--fullscreen\t\tLancia il programma a schermo intero.\n");
 	exit(0);
 }
 
@@ -295,14 +300,14 @@ void initLight() {
 
 void initTexture() {
 	glGenTextures (2,textureID);
-    //texture mela
+    
+	//texture mela
     glBindTexture (GL_TEXTURE_2D, textureID[0]);
     glTexImage2D (GL_TEXTURE_2D,0,GL_RGBA,image->sizeX,image->sizeY,0,GL_RGBA,GL_UNSIGNED_BYTE,image->data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  //da cambiare
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //da cambiare
-    //enable mipmap
+
+	//enable mipmap
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -418,8 +423,8 @@ void initVao() {
 
 	// glVertexPointer(3, GL_FLOAT, 0, 0);
 
-	// vao[2]: griglia
-	glBindVertexArray(vao[2]);
+	// vao[1]: griglia
+	glBindVertexArray(vao[1]);
 	glGenBuffers(2, matrixBuffers);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -560,7 +565,7 @@ void display() {
 }
 
 void drawGrill() {
-	glBindVertexArray(vao[2]);
+	glBindVertexArray(vao[1]);
 	for (int j = -10; j<N_COL-10; j++) {
 		glPushMatrix();
 			glTranslatef(j*CELL+STEP, 0, 0);
@@ -719,7 +724,13 @@ void drawSnakeHelper() {
 			}
 		}
 		// Disegno a video
-		drawElement(ptr->block.coords);
+		glPushMatrix();
+			// Utilizzo l'offset specificato in coordinate x,y
+			glTranslatef(ptr->block.coords[0]*CELL, 0 ,-ptr->block.coords[1]*CELL);
+			// Prendo i vertici da disegnare dai VBO
+			for (int indFace = 0; indFace < FACES_NO; indFace++)
+				glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)(indFace * VERTEX_NO * sizeof(GLuint)));
+		glPopMatrix();
 	}
 }
 
@@ -732,29 +743,20 @@ void drawFruitHelper() {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, fruitMaterial.shine);
 	// Specifico l'array object per i vertici
 	//glBindVertexArray(vao[1]);
+	
 	GLUquadric *quad;											
 	quad = gluNewQuadric();										
 	gluQuadricDrawStyle(quad, GLU_FILL);
+	
 	//glBindTexture(GL_TEXTURE_2D, textureID[0]);
 	gluQuadricTexture(quad, GL_TRUE);
 	gluQuadricNormals(quad, GLU_SMOOTH);
+	
 	glPushMatrix();
 		glTranslatef(fruit.coords[0]*CELL, 0 ,-fruit.coords[1]*CELL);
 		gluSphere(quad,0.4,100,100);
 	glPopMatrix();
-	// Disegno a video
-	//drawElement(fruit.coords);
-}
 
-// Disegna elementi a video.
-void drawElement(int *translate) {
-	glPushMatrix();
-	// Utilizzo l'offset specificato in coordinate x,y
-	glTranslatef(translate[0]*CELL, 0 ,-translate[1]*CELL);
-	// Prendo i vertici da disegnare dai VBO
-	for (int indFace = 0; indFace < FACES_NO; indFace++)
-		glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)(indFace * VERTEX_NO * sizeof(GLuint)));
-	glPopMatrix();
 }
 
 // Disegna a video il punteggio.

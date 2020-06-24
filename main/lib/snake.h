@@ -41,8 +41,6 @@ void processInput(void);
 void display(void);
 // Inizializzazione principale del programma.
 void init(void);
-// Disegna elementi a video.
-void drawElement(int*);
 // Disegna a video il punteggio.
 void writeScore();
 void writeBitmapString(void *font, char *string);
