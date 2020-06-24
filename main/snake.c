@@ -9,9 +9,11 @@
 #include "lib/readBMP.h"
 //variabili globali per le texture 
 struct BitMapFile *image = NULL;
+struct BitMapFile *image2 = NULL;
 static GLenum textureID[1];
 
 char *fileName = "res/textureMela.bmp";
+char *fileName2 = "res/skin.bmp";
 
 // Coordinate ausiliarie per la griglia virtuale (serpente).
 int snakeAuxCoords[2] = {0, 0};
@@ -27,12 +29,12 @@ int score = 0;
 int timeRefresh = 5000;
 
 Material snakeMaterial = {
-    {0.6f, 0.35f, 0.05f,0.92},{0.6,0.35,0.5,0.92},{0.7,0.7,0.7,1.0},{120.0}
+    {0.4f, 0.45f, 0.3f,0.92},{0.3,0.35,0.3,0.92},{0.7,0.7,0.7,1.0},{120.0}
     // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
 };
 
 Material fruitMaterial = {
-	{0.3f, 0.33f, 0.4f,0.92},{0.4,0.4,0.4,0.92},{0.7,0.7,0.7,1.0},{120.0}
+	{0.3f, 0.33f, 0.4f,0.92},{0.7,0.7,0.7,0.92},{0.3,0.3,0.3,1.0},{50.0}
     //{0.8f, 0.1f, 0.05f,0.92},{1.0,0.5,0.5,0.92},{0.7,0.7,0.7,1.0},{100.0}
     // {1.0,0.7,0.1,0.92},{1.0,0.7,0.1,0.92},{1.0,0.7,0.5,1.0},{70.0}
 };
@@ -77,32 +79,33 @@ GLfloat cubeVertexArray[FACES_NO*VERTEX_NO*3] = {
 };
 
 //Vertici dei frutti della scena.
-GLfloat fruitVertexArray[FACES_NO*VERTEX_NO*3] = {
+
+GLfloat textCoordBodyArray[FACES_NO*VERTEX_NO*3] = {
 	//first face
-		0.25, 0.25, 0.25,
-        0.25, -0.25, 0.25,
-        -0.25, 0.25, 0.25,
-		-0.25, -0.25, 0.25,
+		1.0, 1.0, 0.0,
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0,
 	//second face
-		-0.25, 0.25, 0.25,
-        -0.25, -0.25, 0.25,
-        -0.25, 0.25, -0.25,
-		-0.25, -0.25, -0.25,
+		1.0, 1.0, 0.0, 
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0,
 	//third face
-		-0.25, 0.25, -0.25,
-        -0.25, -0.25, -0.25,
-        0.25, 0.25, -0.25,
-		0.25, -0.25, -0.25,
+		1.0, 1.0, 0.0,  
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0,
 	//fourth face
-		0.25, 0.25, -0.25,
-        0.25, -0.25, -0.25,
-        0.25, 0.25, 0.25,
-		0.25, -0.25, 0.25,
+		1.0, 1.0, 0.0,  
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0,
 	//fifth face (lid)
-		0.25, 0.25, -0.25,
-        0.25, 0.25, 0.25,
-        -0.25, 0.25, -0.25,
-		-0.25, 0.25, 0.25
+		1.0, 1.0, 0.0, 
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0
 };
 
 // Vertici della griglia.
@@ -182,7 +185,7 @@ int main(int argc, char** argv) {
 	glutInitWindowSize(1024, 768);
 	glutInitWindowPosition(800, 800);
 	glutCreateWindow("Snake 3D");
-
+	glutFullScreen();
 	// Inizializzazione glew
 	glewErr = glewInit();
 	if (glewErr != GLEW_OK) {
@@ -196,6 +199,14 @@ int main(int argc, char** argv) {
         exit(1);
     } else {
         printf("File %s has size %d x %d \n", fileName, image->sizeX, image->sizeY);
+    }
+
+	image2 = readBMP(fileName2);
+    if (image2 == NULL) {
+        printf("readBMP: Could not openfile: %s \n", fileName2);
+        exit(1);
+    } else {
+        printf("File %s has size %d x %d \n", fileName2, image2->sizeX, image2->sizeY);
     }
 	// Gestione input da tastiera:
 	glutSpecialFunc(keyInput);		// tasti speciali (GLUT_KEY_*) per movimento
@@ -255,6 +266,9 @@ void init() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	// Animazione del serpente
+	glutTimerFunc(timeRefresh/60, redisplayHelper, 0);
 }
 
 void initLight() {
@@ -280,7 +294,7 @@ void initLight() {
 };
 
 void initTexture() {
-	glGenTextures (1,textureID);
+	glGenTextures (2,textureID);
     //define texture for snake's head.
     glBindTexture (GL_TEXTURE_2D, textureID[0]);
     glTexImage2D (GL_TEXTURE_2D,0,GL_RGBA,image->sizeX,image->sizeY,0,GL_RGBA,GL_UNSIGNED_BYTE,image->data);
@@ -288,6 +302,17 @@ void initTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  //da cambiare
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //da cambiare
+    //enable mipmap
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	//texture corpo
+    glBindTexture (GL_TEXTURE_2D, textureID[1]);
+    glTexImage2D (GL_TEXTURE_2D,0,GL_RGBA,image2->sizeX,image2->sizeY,0,GL_RGBA,GL_UNSIGNED_BYTE,image2->data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     //enable mipmap
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -340,26 +365,28 @@ void appendBlock(int *newCoordinates) {
 // VAO.
 void initVao() {
 	// Cubi
-	glGenVertexArrays(3, vao);
 	/* buildVbo((GLfloat*)cubeVertexArray, FACES_NO*VERTEX_NO, NULL, (unsigned int*)cubeVertexIndices, (unsigned int*)cubeBuffers, 0);
 	buildVbo((GLfloat*)fruitVertexArray, FACES_NO*VERTEX_NO, NULL, (unsigned int*)fruitVertexIndices, (unsigned int*)fruitBuffers, 1);
 	buildVbo((GLfloat*)matrixVertexArray, MATRIX_VERTEX_NO, (GLfloat*)matrixColorArray, (unsigned int*)matrixVertexIndices, (unsigned int*)matrixBuffers, 2);
  */
 
 	// Generazione di due buffer ID
-	glGenVertexArrays(3, vao);
+	glGenVertexArrays(2, vao);
 
 	// vao[0]: cubi
 	glBindVertexArray(vao[0]);
 
 	// VBO: abilitazione buffer per vertici e colori
 	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
 
 	glGenBuffers(2, cubeBuffers);
 	// cubeBuffers[0]: vertici
 	glBindBuffer(GL_ARRAY_BUFFER, cubeBuffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray) + sizeof (textCoordBodyArray), NULL, GL_STATIC_DRAW);
+
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertexArray), cubeVertexArray);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), sizeof(textCoordBodyArray), textCoordBodyArray);
 
 	// cubeBuffers[1]: indici
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeBuffers[1]);
@@ -369,26 +396,27 @@ void initVao() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeVertexIndices), cubeVertexIndices, GL_STATIC_DRAW);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glTexCoordPointer(3, GL_FLOAT, 0, (GLvoid*)sizeof(textCoordBodyArray));
 
 	// vao[1]: frutti
-	glBindVertexArray(vao[1]);
-	glGenBuffers(2, fruitBuffers);
+	// glBindVertexArray(vao[1]);
+	// glGenBuffers(2, fruitBuffers);
 
-	glEnableClientState(GL_VERTEX_ARRAY);
+	// glEnableClientState(GL_VERTEX_ARRAY);
 
-	// fruitBuffers[0]: vertici
-	glBindBuffer(GL_ARRAY_BUFFER, fruitBuffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), NULL, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(fruitVertexArray), fruitVertexArray);
+	// // fruitBuffers[0]: vertici
+	// glBindBuffer(GL_ARRAY_BUFFER, fruitBuffers[0]);
+	// glBufferData(GL_ARRAY_BUFFER, sizeof(fruitVertexArray), NULL, GL_STATIC_DRAW);
+	// glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(fruitVertexArray), fruitVertexArray);
 
-	// fruitBuffers[1]: indici
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
-	for(int i = 0; i < FACES_NO * VERTEX_NO; i++)
-		fruitVertexIndices[i] = i;
+	// // fruitBuffers[1]: indici
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fruitBuffers[1]);
+	// for(int i = 0; i < FACES_NO * VERTEX_NO; i++)
+	// 	fruitVertexIndices[i] = i;
 	
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
+	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(fruitVertexIndices), fruitVertexIndices, GL_STATIC_DRAW);
 
-	glVertexPointer(3, GL_FLOAT, 0, 0);
+	// glVertexPointer(3, GL_FLOAT, 0, 0);
 
 	// vao[2]: griglia
 	glBindVertexArray(vao[2]);
@@ -507,15 +535,18 @@ void display() {
 	glBindTexture(GL_TEXTURE_2D, textureID[0]);	
 	// Frutto
 	drawFruitHelper();
-
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	glBindTexture(GL_TEXTURE_2D, textureID[1]);
 	// Serpente
 	drawSnakeHelper();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Disabilito le luci per scrivere lo score
 	glDisable(GL_LIGHTING);
 	glDisable(GL_LIGHT0);
+	//glBindTexture(GL_TEXTURE_2D, 0);
 	writeScore();
 
 	// movate
@@ -524,9 +555,6 @@ void display() {
 
 	// Double buffering
 	glutSwapBuffers();
-
-	// Animazione del serpente
-	glutTimerFunc(timeRefresh/60, redisplayHelper, 0);
 
 	lock = 0;
 }
@@ -707,7 +735,7 @@ void drawFruitHelper() {
 	GLUquadric *quad;											
 	quad = gluNewQuadric();										
 	gluQuadricDrawStyle(quad, GLU_FILL);
-	glBindTexture(GL_TEXTURE_2D, textureID[0]);
+	//glBindTexture(GL_TEXTURE_2D, textureID[0]);
 	gluQuadricTexture(quad, GL_TRUE);
 	gluQuadricNormals(quad, GLU_SMOOTH);
 	glPushMatrix();
@@ -799,4 +827,6 @@ void exitHandler(unsigned char key, int x, int y) {
 // Funzione helper per chiamata da glutTimerFunc.
 void redisplayHelper(int val) {
 	glutPostRedisplay();
+	// Animazione del serpente
+	glutTimerFunc(timeRefresh/60, redisplayHelper, 0);
 }
