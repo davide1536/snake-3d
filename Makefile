@@ -13,5 +13,11 @@ snake.o: main/snake.c
 snake.out: snake.o readBMP.o
 	$(CC) -o snake.out snake.o readBMP.o $(LDFLAGS) $(WFLAGS)
 
+normals.o: main/snake.c
+	$(CC) -o normals.o -c main/snake-normals.c $(LDFLAGS) $(WFLAGS)
+
+snake-normal.out: normals.o readBMP.o
+	$(CC) -o snake-normal.out normals.o readBMP.o $(LDFLAGS) $(WFLAGS)
+
 clean:
-	rm -f snake.out snake.o readBMP.o
+	rm -f snake.*out snake.o readBMP.o
